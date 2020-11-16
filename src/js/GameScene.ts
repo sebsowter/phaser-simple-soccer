@@ -33,8 +33,8 @@ export default class GameScene extends Phaser.Scene {
     this.goalA = new Goal(this, pitch.width - 32, 352);
     this.goalB = new Goal(this, 32, 352);
     this.ball = new Ball(this, pitch.width / 2, pitch.height / 2).setDepth(2);
-    this.teamA = new Team(this, 1).setDepth(2);
-    this.teamB = new Team(this, 2).setDepth(2);
+    this.teamA = new Team(this, 1, true).setDepth(2);
+    this.teamB = new Team(this, 2, false).setDepth(2);
 
     this.physics.world.setBounds(
       WALLS,

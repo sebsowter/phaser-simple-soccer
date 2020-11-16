@@ -1,3 +1,4 @@
+import { PlayerProps } from "../types";
 import PlayerBase from "./PlayerBase";
 
 enum States {
@@ -11,8 +12,14 @@ enum States {
 }
 
 export default class PlayerKeeper extends PlayerBase {
-  constructor(scene: Phaser.Scene, x: number, y: number, frame: number) {
-    super(scene, x, y, frame);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    frame: number,
+    props: PlayerProps
+  ) {
+    super(scene, x, y, frame, props);
   }
 
   public setState(value: number): this {

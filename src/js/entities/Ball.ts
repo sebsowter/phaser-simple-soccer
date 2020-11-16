@@ -11,7 +11,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.scene.physics.world.enable(this);
 
     this.body.setFriction(0.5, 0.5);
-    this.body.setSize(16, 16);
+    //this.body.setSize(16, 16);
   }
 
   public get futurePositio2n() {
