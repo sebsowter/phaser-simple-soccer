@@ -1,15 +1,17 @@
 import { PlayerProps } from "../types";
-import PlayerBase from "./PlayerBase";
+import PlayerField from "./PlayerField";
 
 enum States {
-  GlobalKeeperState = 0,
-  TendGoal = 1,
-  ReturnHome = 2,
-  PutBallBackInPlay = 3,
-  InterceptBall = 4,
+  Wait = 0,
+  ReceiveBall = 0,
+  KickBall = 1,
+  Dribble = 2,
+  ChaseBall = 3,
+  ReturnToHomeRegion = 4,
+  SupportAttacker = 5,
 }
 
-export default class PlayerKeeper extends PlayerBase {
+export default class PlayerAttacker extends PlayerField {
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -22,7 +24,7 @@ export default class PlayerKeeper extends PlayerBase {
 
   public setState(value: number): this {
     switch (value) {
-      case States.TendGoal:
+      case States.Wait:
         break;
     }
 
@@ -31,7 +33,7 @@ export default class PlayerKeeper extends PlayerBase {
 
   public preUpdate(time: number, delta: number): void {
     switch (this.state) {
-      case States.TendGoal:
+      case States.Wait:
         break;
     }
 

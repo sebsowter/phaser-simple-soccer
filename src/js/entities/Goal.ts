@@ -6,6 +6,7 @@ export default class Goal extends Phaser.Physics.Arcade.Image {
     super(scene, x, y, null);
 
     this.setData({ scored: 0 });
+    this.setVisible(false);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);

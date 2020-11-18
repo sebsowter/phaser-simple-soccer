@@ -3,10 +3,10 @@ import MarioSprite from "./MarioSprite";
 
 export default class GameScene extends Phaser.Scene {
   public ball: Ball;
-  private teamA: Team;
-  private teamB: any;
-  private goalA: Goal;
-  private goalB: Goal;
+  public teamA: Team;
+  public teamB: Team;
+  public goalA: Goal;
+  public goalB: Goal;
   private regions: any[];
 
   constructor() {
@@ -74,5 +74,9 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, widthInPixels, heightInPixels);
     this.cameras.main.startFollow(mario, true);
     */
+  }
+
+  public get goalkeeeperHasBall(): boolean {
+    return false;
   }
 }
