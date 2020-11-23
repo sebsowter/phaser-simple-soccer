@@ -4,13 +4,13 @@ const teams: TeamProps[] = [
   {
     id: 1,
     frame: 2,
-    name: "Team",
+    name: "red",
     players: [1, 2, 3, 4, 5],
   },
   {
     id: 2,
     frame: 1,
-    name: "Team",
+    name: "blue",
     players: [1, 2, 3, 4, 5],
   },
 ];

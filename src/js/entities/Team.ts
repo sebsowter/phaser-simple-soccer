@@ -1,19 +1,17 @@
 import PlayerBase from "./PlayerBase";
-import PlayerField from "./PlayerField";
-import PlayerKeeper from "./PlayerKeeper";
 import Spot from "./Spot";
-import { Players, Teams, redRegions, blueRegions } from "../constants";
+import { Players, Teams } from "../constants";
 import { PlayerProps, TeamProps } from "../types";
-import { distanceBetween } from "../utils";
 import GameScene from "../GameScene";
+import Goal from "./Goal";
 
 enum States {
-  waiting = 0,
-  defending = 1,
-  attacking = 2,
+  PrepareForKickOff = 0,
+  Defending = 1,
+  Attacking = 2,
 }
 
-function getRegionPosition(region: number): Phaser.Math.Vector2 {
+function getRegionPos(region: number): Phaser.Math.Vector2 {
   const COLS = 6;
 
   return new Phaser.Math.Vector2(
@@ -26,93 +24,75 @@ export default class Team extends Phaser.GameObjects.Container {
   public scene: GameScene;
   public state: number;
   private spots: Spot[];
-  private isLeft: boolean;
-  private goalPosition: Phaser.Math.Vector2;
-  public oponents: PlayerBase[];
+  public isLeft: boolean;
+  public regions: any;
+  public goal: Goal;
+  public opponents: Team;
   public players: PlayerBase[];
-  private _controllingPlayer: PlayerBase;
-  private _supportingPlayer: PlayerBase;
-  private _receivingPlayer: PlayerBase;
-  private _closestPlayer: PlayerBase;
-  private homeRegions: number[];
 
-  constructor(scene: Phaser.Scene, teamId: number, isLeft: boolean) {
+  private _controllingPlayer: PlayerBase = null;
+  private _supportingPlayer: PlayerBase = null;
+  private _receivingPlayer: PlayerBase = null;
+  private _closestPlayer: PlayerBase = null;
+
+  constructor(
+    scene: Phaser.Scene,
+    teamId: number,
+    isLeft: boolean,
+    goal: Goal,
+    regions: any
+  ) {
     super(scene);
 
     this.scene.add.existing(this);
 
     this.isLeft = isLeft;
-    this.goalPosition = new Phaser.Math.Vector2().setFromObject(
-      this.isLeft ? this.scene.goalA : this.scene.goalB
-    );
+    this.goal = goal;
+    this.regions = regions;
 
     const team: TeamProps = Teams.find((team: TeamProps) => team.id === teamId);
     const players: PlayerProps[] = team.players.map((id: number) => {
       return Players.find((player: PlayerProps) => player.id === id);
     });
 
-    this.players = players.map((props: PlayerProps) => {
-      const position = new Phaser.Math.Vector2(
+    this.players = players.map((props: PlayerProps, index: number) => {
+      return new PlayerBase(
+        this.scene,
         Phaser.Math.Between(64, 1280 - 64),
-        Phaser.Math.Between(64, 704 - 64)
+        Phaser.Math.Between(64, 704 - 64),
+        team.frame,
+        props,
+        index,
+        team.name
       );
-
-      const player =
-        props.position === "GKdddd"
-          ? new PlayerKeeper(
-              this.scene,
-              position.x,
-              position.y,
-              team.frame,
-              props
-            )
-          : new PlayerField(
-              this.scene,
-              position.x,
-              position.y,
-              team.frame,
-              props
-            );
-
-      this.add(player);
-
-      return player;
     });
 
-    this.oponents = this.players;
-
-    this.setState(States.waiting);
-    this.setHomeRegions();
+    this.add(this.players);
+    this.setState(States.PrepareForKickOff);
     this.setSupportSpots();
+  }
 
-    setTimeout(() => {
-      if (isLeft) {
-        const result = this.isPassSafeFromOpponent(
-          new Phaser.Math.Vector2(this.players[0].x, this.players[0].y),
-          new Phaser.Math.Vector2(this.players[2].x, this.players[2].y),
-          this.players[2],
-          this.oponents[3],
-          200
-        );
-      }
-    }, 500);
+  public setOpponents(opponents: Team): void {
+    this.opponents = opponents;
   }
 
   public preUpdate(): void {
+    this.setClosestPlayer();
+
     switch (this.state) {
-      case States.waiting:
-        if (this.allPlayersHome) {
-          this.setState(States.defending);
+      case States.PrepareForKickOff:
+        if (this.allPlayersHome && this.opponents.allPlayersHome) {
+          this.setState(States.Defending);
         }
         break;
-      case States.defending:
+      case States.Defending:
         if (this.isInControl) {
-          this.setState(States.attacking);
+          this.setState(States.Attacking);
         }
         break;
-      case States.attacking:
+      case States.Attacking:
         if (!this.isInControl) {
-          this.setState(States.defending);
+          this.setState(States.Defending);
         }
         break;
     }
@@ -122,19 +102,29 @@ export default class Team extends Phaser.GameObjects.Container {
     this.state = value;
 
     switch (value) {
-      case States.waiting:
+      case States.PrepareForKickOff:
+        document.querySelector(
+          `#${this.isLeft ? "red" : "blue"}-state`
+        ).innerHTML = "PrepareForKickOff";
+        this.closestPlayer = null;
         this.controllingPlayer = null;
+        this.receivingPlayer = null;
         this.supportingPlayer = null;
-        this.controllingPlayer = null;
-        this.controllingPlayer = null;
+        this.setHomeRegions(value);
         this.returnAllToHome();
         break;
-      case States.defending:
-        this.setHomeRegions();
-        this.returnAllToHome();
+      case States.Defending:
+        document.querySelector(
+          `#${this.isLeft ? "red" : "blue"}-state`
+        ).innerHTML = "Defending";
+        this.setHomeRegions(value);
+        this.returnWaitingToHome();
         break;
-      case States.attacking:
-        this.setHomeRegions();
+      case States.Attacking:
+        document.querySelector(
+          `#${this.isLeft ? "red" : "blue"}-state`
+        ).innerHTML = "Attacking";
+        this.setHomeRegions(value);
         this.returnAllToHome();
         this.calculateSupportingPlayer();
         break;
@@ -144,35 +134,37 @@ export default class Team extends Phaser.GameObjects.Container {
   }
 
   public canShoot(
-    from?: any,
-    to?: any,
-    angle?: number,
-    power?: number
+    ballPos: Phaser.Math.Vector2,
+    power: number,
+    target?: Phaser.Math.Vector2
   ): boolean {
-    const NumAttemptsToFindValidStrike = 100;
-    const { ball, goalA, goalB } = this.scene;
+    const MAX_ATTEMPTS = 5;
+    const { ball } = this.scene;
 
-    let attempts = NumAttemptsToFindValidStrike;
+    let attempts = MAX_ATTEMPTS;
 
-    while (attempts--) {
-      const goal = this.isLeft ? goalB : goalA;
-      const randomY = goal.y + (Math.random() * goal.height - goal.height / 2);
-      const target = new Phaser.Math.Vector2(
-        this.isLeft ? goal.x + 16 : goal.x - 16,
-        randomY
-      );
-      const ballPosition = new Phaser.Math.Vector2().setFromObject(ball);
-      const time = ball.timeToCoverDistance(ballPosition, target, power);
+    //while (attempts--) {
+    const targetPos = new Phaser.Math.Vector2(
+      this.goal.x,
+      this.goal.y - this.goal.height / 2 + Math.random() * this.goal.height
+    );
 
-      if (
-        time > 0 &&
-        this.isPassSafeFromAllOpponents(ballPosition, target, null, power)
-      ) {
-        return true;
-      }
+    const time = ball.timeToCoverDistance(ballPos, targetPos, power);
+
+    console.log(
+      "time",
+      this.isPassSafeFromAllOpponents(ballPos, targetPos, null, power)
+    );
+
+    if (
+      time > 0 &&
+      this.isPassSafeFromAllOpponents(ballPos, targetPos, null, power)
+    ) {
+      return true;
     }
+    //}
 
-    return false;
+    return true;
   }
 
   public getBestPassToReceiver(
@@ -181,13 +173,11 @@ export default class Team extends Phaser.GameObjects.Container {
     target: Phaser.Math.Vector2,
     power: number
   ) {
-    const ballPosition = new Phaser.Math.Vector2().setFromObject(
-      this.scene.ball
-    );
-    const receiverPosition = new Phaser.Math.Vector2().setFromObject(receiver);
+    const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
+    const receiverPos = new Phaser.Math.Vector2().setFromObject(receiver);
     const time = this.scene.ball.timeToCoverDistance(
-      ballPosition,
-      receiverPosition,
+      ballPos,
+      receiverPos,
       power
     );
 
@@ -199,47 +189,31 @@ export default class Team extends Phaser.GameObjects.Container {
     const ScalingFactor = 0.3;
     InterceptRange *= ScalingFactor;
 
-    const receiverDistance = Phaser.Math.Distance.BetweenPoints(
-      ballPosition,
-      receiverPosition
+    const receiverDist = Phaser.Math.Distance.BetweenPoints(
+      ballPos,
+      receiverPos
     );
-    const receiverAngle = Phaser.Math.Angle.BetweenPoints(
-      ballPosition,
-      receiverPosition
-    );
+    const receiverAngle = Phaser.Math.Angle.BetweenPoints(ballPos, receiverPos);
     const passLeft = new Phaser.Math.Vector2(
-      receiverPosition.x +
-        InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
-      receiverPosition.y +
-        InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
+      receiverPos.x + InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
+      receiverPos.y + InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
     );
     const passRight = new Phaser.Math.Vector2(
-      receiverPosition.x -
-        InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
-      receiverPosition.y -
-        InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
+      receiverPos.x - InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
+      receiverPos.y - InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
     );
-    const passes: Phaser.Math.Vector2[] = [
-      passLeft,
-      receiverPosition,
-      passRight,
-    ];
+    const passes: Phaser.Math.Vector2[] = [passLeft, receiverPos, passRight];
 
     let closestSoFar = 1000;
     let result = false;
 
     for (let i = 0; i < passes.length; i++) {
-      const dist = Math.abs(passes[i].x - this.goalPosition.x);
+      const dist = Math.abs(passes[i].x - this.goal.x);
 
       if (
         dist < closestSoFar &&
         // TODO: and within pitch bounds
-        this.isPassSafeFromAllOpponents(
-          ballPosition,
-          passes[i],
-          receiver,
-          power
-        )
+        this.isPassSafeFromAllOpponents(ballPos, passes[i], receiver, power)
       ) {
         closestSoFar = dist;
         target = passes[i];
@@ -255,26 +229,23 @@ export default class Team extends Phaser.GameObjects.Container {
     receiver: PlayerBase,
     target: Phaser.Math.Vector2,
     power: number,
-    minPassingDistance: number
+    minPassingDist: number
   ): boolean {
-    const passerPosition = new Phaser.Math.Vector2().setFromObject(passer);
-    const ballPosition = new Phaser.Math.Vector2().setFromObject(
-      this.scene.ball
-    );
+    const passerPos = new Phaser.Math.Vector2().setFromObject(passer);
+    const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
 
     let ClosestToGoalSoFar = 1000; // TODO: Set max
     let ballTarget = null;
 
     this.players.forEach((player: PlayerBase) => {
-      const playerPosition = new Phaser.Math.Vector2().setFromObject(player);
+      const playerPos = new Phaser.Math.Vector2().setFromObject(player);
 
       if (
         player !== passer &&
-        passerPosition.distance(passerPosition) >
-          minPassingDistance * minPassingDistance
+        passerPos.distance(passerPos) > minPassingDist * minPassingDist
       ) {
         if (this.getBestPassToReceiver(passer, player, ballTarget, power)) {
-          const Dist2Goal = Math.abs(ballTarget.x - this.goalPosition.x);
+          const Dist2Goal = Math.abs(ballTarget.x - this.goal.x);
 
           if (Dist2Goal < ClosestToGoalSoFar) {
             ClosestToGoalSoFar = Dist2Goal;
@@ -285,64 +256,86 @@ export default class Team extends Phaser.GameObjects.Container {
       }
     });
 
-    if (receiver) {
-      return true;
-    } else {
-      return false;
-    }
+    if (receiver) return true;
+    else return false;
   }
-
-  public requestPass(player: PlayerBase): void {}
 
   // ------------------------------------------------
 
-  public isOpponentWithinRadius(
-    player: PlayerBase,
-    threshhold: number
-  ): boolean {
+  public requestPass(player: PlayerBase): void {}
+
+  public isOpponentWithinRadius(player: PlayerBase, radius: number): boolean {
     return this.players.some((props: PlayerBase) => {
       return (
         Phaser.Math.Distance.Between(player.x, player.y, props.x, props.y) <
-        threshhold
+        radius
       );
     });
   }
 
-  public returnAllToHome(): this {
-    this.players.forEach((player: PlayerBase) => {
-      player.returnHome();
-    });
-
-    return this;
+  public requestSupport(): void {
+    this.calculateSupportingPlayer().support();
   }
+
+  /*
+   * --------------------------------------------------------
+   */
 
   public get isInControl(): boolean {
     return !!this.controllingPlayer;
   }
 
+  /*
+   * --------------------------------------------------------
+   */
+
   public get allPlayersHome(): boolean {
     return this.players.every((player: PlayerBase) => player.isHome);
   }
 
-  public setHomeRegions(): this {
-    const regions = this.isLeft ? redRegions : blueRegions;
+  public setHomeRegions(state: number): void {
+    const { defending, attacking } = this.regions;
+    const region = state === States.Attacking ? attacking : defending;
 
-    this.homeRegions =
-      this.state === States.defending ? regions.defending : regions.attacking;
-
-    this.players.forEach((player: PlayerBase, index: number) =>
-      player.setTarget(getRegionPosition(this.homeRegions[index]))
-    );
-
-    return this;
+    this.players.forEach((player: PlayerBase, index: number) => {
+      player.setHome(getRegionPos(region[index]));
+    });
   }
 
-  public sendPass(player: PlayerBase): void {}
+  public returnAllToHome(): void {
+    this.players.forEach((player: PlayerBase) => {
+      player.returnHome();
+    });
+  }
 
-  public requestSupport(): void {
-    const s = this.calculateSupportingPlayer();
+  public returnWaitingToHome(): void {
+    this.players.forEach((player: PlayerBase) => {
+      player.returnHome();
+    });
+  }
 
-    s.support();
+  /*
+   * --------------------------------------------------------
+   */
+
+  public sendPass(
+    player: PlayerBase,
+    receiver: PlayerBase,
+    ballPos: Phaser.Math.Vector2
+  ): void {
+    receiver.receivePass(player, ballPos);
+  }
+
+  public canPass(
+    player: PlayerBase,
+    receiver: PlayerBase,
+    ballPos: Phaser.Math.Vector2,
+    power: number,
+    minDistance: number
+  ): boolean {
+    const playerPos = new Phaser.Math.Vector2().setFromObject(player);
+
+    return this.isPassSafeFromAllOpponents(playerPos, ballPos, receiver, power);
   }
 
   public get supportingPlayer(): PlayerBase {
@@ -384,43 +377,31 @@ export default class Team extends Phaser.GameObjects.Container {
     opponent: PlayerBase,
     maxForce: number
   ): boolean {
-    console.log("from", from);
-    console.log("to", to);
-    const opponentPosition = new Phaser.Math.Vector2().setFromObject(opponent);
-    const passDistance = Phaser.Math.Distance.BetweenPoints(from, to);
-    const angleToTarget = Phaser.Math.Angle.BetweenPoints(from, to);
-    const angleToOpponent = Phaser.Math.Angle.BetweenPoints(
-      from,
-      opponentPosition
-    );
-    const opponentDistance = Phaser.Math.Distance.BetweenPoints(
-      from,
-      opponentPosition
-    );
-    console.log("angle", angleToTarget * Phaser.Math.RAD_TO_DEG);
-    console.log("opponentDistance", opponentDistance);
+    const { ball } = this.scene;
+    const passDist = Phaser.Math.Distance.BetweenPoints(from, to);
+    const passAngle = Phaser.Math.Angle.BetweenPoints(from, to);
+    const opponentPos = new Phaser.Math.Vector2().setFromObject(opponent);
+    const opponentAngle = Phaser.Math.Angle.BetweenPoints(from, opponentPos);
+    const opponentDist = Phaser.Math.Distance.BetweenPoints(from, opponentPos);
     const opponentLocal = new Phaser.Math.Vector2(
-      opponentDistance * Math.cos(angleToOpponent - angleToTarget),
-      opponentDistance * Math.sin(angleToOpponent - angleToTarget)
+      opponentDist * Math.cos(opponentAngle - passAngle),
+      opponentDist * Math.sin(opponentAngle - passAngle)
     );
-    console.log("opponentLocal", opponentLocal);
 
-    receiver.setTint(0xff6600);
-    opponent.setTint(0x00ffff);
+    //receiver.setTint(0xff6600);
+    //opponent.setTint(0x00ffff);
 
     if (opponentLocal.x < 0) {
       return true;
     }
 
-    if (passDistance < opponentDistance) {
+    if (passDist < opponentDist) {
       if (receiver) {
-        const receiverPosition = new Phaser.Math.Vector2().setFromObject(
-          receiver
-        );
+        const receiverPos = new Phaser.Math.Vector2().setFromObject(receiver);
 
         if (
-          Phaser.Math.Angle.BetweenPoints(to, opponentPosition) >
-          Phaser.Math.Angle.BetweenPoints(to, receiverPosition)
+          Phaser.Math.Angle.BetweenPoints(to, opponentPos) >
+          Phaser.Math.Angle.BetweenPoints(to, receiverPos)
         ) {
           return true;
         }
@@ -429,7 +410,7 @@ export default class Team extends Phaser.GameObjects.Container {
       }
     }
 
-    const TimeForBall = this.scene.ball.timeToCoverDistance(
+    const TimeForBall = ball.timeToCoverDistance(
       new Phaser.Math.Vector2(),
       new Phaser.Math.Vector2(opponentLocal.x, 0),
       maxForce
@@ -451,7 +432,7 @@ export default class Team extends Phaser.GameObjects.Container {
   ): boolean {
     //from.setTint(0xffff00);
 
-    return this.scene.teamB.players.every((opponent: PlayerBase) => {
+    return this.opponents.players.every((opponent: PlayerBase) => {
       return this.isPassSafeFromOpponent(
         from,
         to,
@@ -461,8 +442,75 @@ export default class Team extends Phaser.GameObjects.Container {
       );
     });
   }
+  //---------------------------------------------------------
 
-  public calculateSupportingPosition(): number {
+  public setClosestPlayer(): void {
+    const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
+
+    let closestPlayer = this.players[0];
+
+    this.players.forEach((player: PlayerBase) => {
+      const closestPos = new Phaser.Math.Vector2().setFromObject(closestPlayer);
+      const playerPos = new Phaser.Math.Vector2().setFromObject(player);
+
+      if (
+        Phaser.Math.Distance.BetweenPoints(playerPos, ballPos) <
+        Phaser.Math.Distance.BetweenPoints(closestPos, ballPos)
+      ) {
+        closestPlayer = player;
+      }
+    });
+
+    this.closestPlayer = closestPlayer;
+  }
+
+  public set closestPlayer(value: PlayerBase) {
+    this._closestPlayer = value;
+  }
+
+  public get closestPlayer(): PlayerBase {
+    return this._closestPlayer;
+  }
+
+  //---------------------------------------------------------
+
+  public setControllingPlayer(player: PlayerBase): void {
+    this.controllingPlayer = player;
+  }
+
+  public set controllingPlayer(value: PlayerBase) {
+    this._controllingPlayer = value;
+  }
+
+  public get controllingPlayer(): PlayerBase {
+    return this._controllingPlayer;
+  }
+
+  //---------------------------------------------------------
+
+  public setReceivingPlayer(player: PlayerBase): void {
+    this.receivingPlayer = player;
+  }
+
+  public set receivingPlayer(value: PlayerBase) {
+    this._receivingPlayer = value;
+  }
+
+  public get receivingPlayer(): PlayerBase {
+    return this._receivingPlayer;
+  }
+
+  //---------------------------------------------------------
+
+  public setSupportingPlayer(player: PlayerBase): void {
+    this.supportingPlayer = player;
+  }
+
+  public set supportingPlayer(value: PlayerBase) {
+    this._supportingPlayer = value;
+  }
+
+  public calculateSupportingPos(): number {
     let spotBest: Spot = null;
     let scoreBest: number = 0;
 
@@ -494,8 +542,14 @@ export default class Team extends Phaser.GameObjects.Container {
       //
 
       if (true) {
+        const controllingPlayerPos = new Phaser.Math.Vector2().setFromObject(
+          this.controllingPlayer
+        );
         const OPTIMAL_DISTANCE = 200;
-        const distance = distanceBetween(spot, this.controllingPlayer);
+        const distance = Phaser.Math.Distance.BetweenPoints(
+          spot,
+          controllingPlayerPos
+        );
         const normal = Math.abs(OPTIMAL_DISTANCE - distance);
 
         if (normal < OPTIMAL_DISTANCE) {
@@ -520,7 +574,7 @@ export default class Team extends Phaser.GameObjects.Container {
     let bestScore: number = 0;
 
     this.players.forEach((player: PlayerBase) => {
-      const score = this.calculateSupportingPosition();
+      const score = this.calculateSupportingPos();
 
       if (score > bestScore) {
         bestPlayer = player;
@@ -531,45 +585,5 @@ export default class Team extends Phaser.GameObjects.Container {
     this.supportingPlayer = bestPlayer;
 
     return bestPlayer;
-  }
-
-  public get closestPlayer(): PlayerBase {
-    const { ball } = this.scene;
-
-    let closest = this.players[0];
-
-    this.players.forEach((player: PlayerBase) => {
-      if (distanceBetween(player, ball) < distanceBetween(closest, ball)) {
-        closest = player;
-      }
-    });
-
-    //this.closestPlayer = closest;
-
-    return closest;
-  }
-
-  public get controllingPlayer(): PlayerBase {
-    return this.players[0] || null;
-  }
-
-  public get receivingPlayer(): PlayerBase {
-    return this.players[0] || null;
-  }
-
-  public set supportingPlayer(value: PlayerBase) {
-    this._supportingPlayer = value;
-  }
-
-  public set controllingPlayer(value: PlayerBase) {
-    this._controllingPlayer = value;
-  }
-
-  public set receivingPlayer(value: PlayerBase) {
-    this._receivingPlayer = value;
-  }
-
-  public set closestPlayer(value: PlayerBase) {
-    this._closestPlayer = value;
   }
 }

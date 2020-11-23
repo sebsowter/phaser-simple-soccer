@@ -1,9 +1,3 @@
-interface SpotProps {
-  canPassScore: number;
-  canScoreFromPositionScore: number;
-  distanceFromControllingPlayerScore: number;
-}
-
 export default class Spot extends Phaser.Math.Vector2 {
   private _score: number;
 

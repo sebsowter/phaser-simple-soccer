@@ -1,5 +1,5 @@
 import { Ball, Goal, Team } from "./entities";
-import MarioSprite from "./MarioSprite";
+import { redRegions, blueRegions } from "./constants";
 
 export default class GameScene extends Phaser.Scene {
   public ball: Ball;
@@ -7,7 +7,6 @@ export default class GameScene extends Phaser.Scene {
   public teamB: Team;
   public goalA: Goal;
   public goalB: Goal;
-  private regions: any[];
 
   constructor() {
     super({
@@ -21,6 +20,7 @@ export default class GameScene extends Phaser.Scene {
     this.data.set(
       {
         keeperHasBall: false,
+        gameOn: false,
       },
       false
     );
@@ -29,21 +29,24 @@ export default class GameScene extends Phaser.Scene {
   public create(): void {
     const WALLS = 64;
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
+    const { width, height } = pitch;
 
-    this.goalA = new Goal(this, pitch.width - 32, 352);
-    this.goalB = new Goal(this, 32, 352);
-    this.ball = new Ball(this, pitch.width / 2, pitch.height / 2).setDepth(2);
-    this.teamA = new Team(this, 1, true).setDepth(2);
-    this.teamB = new Team(this, 2, false).setDepth(2);
+    this.goalA = new Goal(this, WALLS, height / 2, true);
+    this.goalB = new Goal(this, width - WALLS, height / 2, false);
+    this.ball = new Ball(this, width / 2, height / 2).setDepth(2);
+    this.teamA = new Team(this, 1, true, this.goalB, redRegions).setDepth(2);
+    this.teamB = new Team(this, 2, false, this.goalA, blueRegions).setDepth(2);
+    this.teamA.setOpponents(this.teamB);
+    this.teamB.setOpponents(this.teamA);
 
     this.physics.world.setBounds(
       WALLS,
       WALLS,
-      pitch.width - WALLS * 2,
-      pitch.height - WALLS * 2
+      width - WALLS * 2,
+      height - WALLS * 2
     );
 
-    this.cameras.main.setBounds(0, 0, pitch.width, pitch.height);
+    this.cameras.main.setBounds(0, 0, width, height);
 
     /*
     const tilemap = this.make.tilemap({
@@ -76,7 +79,29 @@ export default class GameScene extends Phaser.Scene {
     */
   }
 
+  public update(): void {
+    switch (this.gameOn) {
+      case false:
+        if (this.teamA.allPlayersHome && this.teamB.allPlayersHome) {
+          this.gameOn = true;
+        }
+        break;
+    }
+  }
+
+  public set goalkeeeperHasBall(value: boolean) {
+    this.data.set("keeperHasBall", value);
+  }
+
   public get goalkeeeperHasBall(): boolean {
-    return false;
+    return this.data.get("keeperHasBall");
+  }
+
+  public set gameOn(value: boolean) {
+    this.data.set("gameOn", value);
+  }
+
+  public get gameOn(): boolean {
+    return this.data.get("gameOn");
   }
 }

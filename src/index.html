@@ -1,9 +1,80 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 0.9em;
+      }
+    </style>
   </head>
   <body>
+    <div>
+      <table>
+        <thead>
+          <th>Red</th>
+          <th>0-0</th>
+          <th>Blue</th>
+        </thead>
+        <tr>
+          <td id="red-state">-</td>
+          <td></td>
+          <td id="blue-state">-</td>
+        </tr>
+        <tr>
+          <td>
+            <table width="320">
+              <tr>
+                <td width="150">Player 1:</td>
+                <td id="red-1">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 2:</td>
+                <td id="red-2">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 3:</td>
+                <td id="red-3">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 4:</td>
+                <td id="red-4">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 5:</td>
+                <td id="red-5">Attacking</td>
+              </tr>
+            </table>
+          </td>
+          <td></td>
+          <td>
+            <table width="320">
+              <tr>
+                <td width="150">Player 1:</td>
+                <td id="blue-1">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 2:</td>
+                <td id="blue-2">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 3:</td>
+                <td id="blue-3">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 4:</td>
+                <td id="blue-4">Attacking</td>
+              </tr>
+              <tr>
+                <td>Player 5:</td>
+                <td id="blue-5">Attacking</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </div>
   </body>
 </html>
