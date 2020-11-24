@@ -55,17 +55,30 @@ export default class GameScene extends Phaser.Scene {
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
+    this.physics.world.setBounds(
+      BORDER,
+      BORDER,
+      width - BORDER * 2,
+      height - BORDER * 2
+    );
+
+    this.cameras.main.setBounds(0, 0, width, height);
+
+    this.test();
+  }
+
+  private test(): void {
     const point1 = new Phaser.GameObjects.Sprite(
       this,
       200,
       352,
       "sprites",
-      1
+      3
     ).setDepth(4);
     this.add.existing(point1);
 
     const pin = -0.52;
-    const point2 = new Phaser.GameObjects.Sprite(this, 500, 352, "sprites", 2)
+    const point2 = new Phaser.GameObjects.Sprite(this, 500, 352, "sprites", 4)
       .setDepth(4)
       .setRotation(Math.PI * pin);
     this.add.existing(point2);
@@ -79,15 +92,6 @@ export default class GameScene extends Phaser.Scene {
     console.log("v2", v2);
     const dot = v1.dot(v2);
     console.log("dot", dot);
-
-    this.physics.world.setBounds(
-      BORDER,
-      BORDER,
-      width - BORDER * 2,
-      height - BORDER * 2
-    );
-
-    this.cameras.main.setBounds(0, 0, width, height);
   }
 
   public update(): void {

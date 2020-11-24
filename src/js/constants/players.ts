@@ -9,6 +9,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 2,
@@ -18,6 +19,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 3,
@@ -27,6 +29,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 4,
@@ -36,6 +39,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 5,
@@ -45,6 +49,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 6,
@@ -54,6 +59,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 7,
@@ -63,6 +69,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 8,
@@ -72,6 +79,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 9,
@@ -81,6 +89,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
   {
     id: 10,
@@ -90,6 +99,7 @@ const players: PlayerProps[] = [
     strength: 1,
     power: 1,
     toughness: 1,
+    accuracy: 1,
   },
 ];
 

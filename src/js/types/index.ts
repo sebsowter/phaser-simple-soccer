@@ -6,6 +6,7 @@ export interface PlayerProps {
   strength: number;
   power: number;
   toughness: number;
+  accuracy: number;
 }
 
 export interface TeamProps {

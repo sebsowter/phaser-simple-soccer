@@ -141,9 +141,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
     switch (this.state) {
       case States.KickBall:
-        const power = 400;
+        const power = 500;
         const ERROR_MARGIN = Math.PI / 16;
         const toBall = ballPos.subtract(thisPos).normalize();
+
         dot = thisPos.clone().dot(toBall);
 
         if (
@@ -160,6 +161,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           //console.log("dot", dot);
 
           console.log("Shoooooooooooot!");
+
           const randomAngle =
             goalAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
 
@@ -196,10 +198,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
         break;
       case States.Dribble:
+        // If back to goal kick ball at angle.
         const { facing } = this.parentContainer.goal;
         const goalDot = facing.dot(this.heading);
 
-        // If back to goal kick ball at angle.
         if (goalDot > 0) {
           const direction = Math.sign(
             this.heading.y * facing.x - this.heading.x * facing.y
@@ -217,6 +219,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         break;
       case States.SupportAttacker:
         if (!this.parentContainer.isInControl) {
+          this.parentContainer.setSupportingPlayer(null);
+          this.setData({ arrive: false });
           this.setState(States.ReturnToHomeRegion);
         } else {
           // If the best supporting spot changes, change the steering target.
@@ -407,7 +411,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public get isThreatened(): boolean {
     return this.parentContainer.isOpponentWithinRadius(
       new Vector2().setFromObject(this),
-      70
+      150
     );
   }
 

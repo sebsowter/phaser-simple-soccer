@@ -271,15 +271,14 @@ export default class Team extends Phaser.GameObjects.Container {
     player: Phaser.Math.Vector2,
     radius: number
   ): boolean {
-    return this.opponents.players.some(
-      (opponent: PlayerBase) =>
-        Phaser.Math.Distance.Between(
-          player.x,
-          player.y,
-          opponent.x,
-          opponent.y
+    return this.opponents.players.some((opponent: PlayerBase) => {
+      return (
+        Phaser.Math.Distance.BetweenPoints(
+          player,
+          new Phaser.Math.Vector2().setFromObject(opponent)
         ) < radius
-    );
+      );
+    });
   }
 
   public requestSupport(): void {
