@@ -18,6 +18,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public body: Phaser.Physics.Arcade.Body;
   public parentContainer: Team;
   private _home: Vector2;
+  private _target: Vector2;
 
   constructor(
     scene: Phaser.Scene,
@@ -36,7 +37,14 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this.scene.physics.world.enable(this);
 
     this.setData(props);
-    this.setData({ name, index });
+    this.setData({
+      name,
+      index,
+      pursuit: false,
+      arrive: false,
+      seek: false,
+      separation: false,
+    });
     this.setDepth(3);
   }
 
@@ -58,18 +66,18 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
         if (
           this.inHotRegion ||
-          (Math.random() < 0.1 &&
-            this.parentContainer.isOpponentWithinRadius(
-              this,
+          (Math.random() < 0.5 &&
+            !this.parentContainer.isOpponentWithinRadius(
+              new Vector2().setFromObject(this),
               PASS_THREAT_RADIUS
             ))
         ) {
           this.setData({
-            arriveOn: true,
+            arrive: true,
           });
         } else {
           this.setData({
-            persuitOn: true,
+            pursuit: true,
           });
         }
         break;
@@ -83,9 +91,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         document.querySelector(
           `#${this.getData("name")}-${this.getData("index") + 1}`
         ).innerHTML = "SupportAttacker";
-        //console.log(color + " ChaseBall");
-        //       player->Steering()->ArriveOn();
-        //player->Steering()->SetTarget(player->Team()->GetSupportSpot());
+        this.setData({ arrive: true });
+        this.setTarget(this.parentContainer.getSupportSpot());
         break;
       case States.KickBall:
         document.querySelector(
@@ -116,12 +123,12 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public preUpdate(time: number, delta: number): void {
     const POT_SHOT = 0.5;
     const MAX_POWER = 0.5;
-    const [speed, persuitOn, arriveOn] = this.getData([
+    const [speed, pursuit, arrive] = this.getData([
       "speed",
-      "persuitOn",
-      "arriveOn",
+      "pursuit",
+      "arrive",
     ]);
-    const { ball, goalkeeeperHasBall } = this.scene;
+    const { ball, goalkeeperHasBall } = this.scene;
     const thisPos = new Vector2().setFromObject(this);
     const goalPos = new Vector2().setFromObject(this.parentContainer.goal);
     const goalAngle = Angle.BetweenPoints(thisPos, goalPos);
@@ -130,39 +137,38 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     const ballDist = Distance.BetweenPoints(thisPos, ballPos);
     const targetAngle = Angle.BetweenPoints(thisPos, this.home);
     const MIN_PASS_DISTANCE = 10;
+    let dot;
 
     switch (this.state) {
       case States.KickBall:
+        const power = 400;
+        const ERROR_MARGIN = Math.PI / 16;
         const toBall = ballPos.subtract(thisPos).normalize();
-        const dot = thisPos.dot(toBall);
+        dot = thisPos.clone().dot(toBall);
 
         if (
           this.parentContainer.receivingPlayer ||
-          goalkeeeperHasBall //||
-          // dot < 0
+          goalkeeperHasBall //||
+          // dot < 0 / ball behind player
         ) {
           this.setState(States.ChaseBall);
-          return;
-        }
-
-        //const power = MAX_POWER * dot;
-        const power = 400;
-        //console.log("dot", dot);
-
-        if (
-          this.parentContainer.canShoot(ballPos, power, goalPos)
+        } else if (
+          this.parentContainer.canShoot(ballPos, power)
           //|| Math.random() < POT_SHOT
         ) {
-          //BallTarget = AddNoiseToKick(player->Ball()->Pos(), BallTarget);
-          //console.log("Shoooooooooooot!");
-          ball.kick(goalAngle, power);
+          //const power = MAX_POWER * dot;
+          //console.log("dot", dot);
 
+          console.log("Shoooooooooooot!");
+          const randomAngle =
+            goalAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
+
+          ball.kick(randomAngle, power);
           this.setState(States.Wait);
-
           this.parentContainer.requestSupport();
         } else if (
           this.isThreatened &&
-          this.parentContainer.canPass(
+          this.parentContainer.findPass(
             this,
             this.parentContainer.receivingPlayer,
             ballPos,
@@ -171,21 +177,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           )
         ) {
           console.log("Pass");
+          const passAngle =
+            ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
 
-          //console.log("Pass");
-          // add some noise to the kick
-          // ballTarget = AddNoiseToKick(player->Ball()->Pos(), BallTarget);
-          // Vector2D KickDirection = BallTarget - player->Ball()->Pos();
-          // player->Ball()->Kick(KickDirection, power);
-          ball.kick(ballAngle, power);
-          // let the receiver know a pass is coming
-          // Dispatch->DispatchMsg(SEND_MSG_IMMEDIATELY,
-          // player->ID(),
-          // receiver->ID(),
-          // Msg_ReceiveBall,
-          // NO_SCOPE,
-          // &BallTarget);//the player should wait at his current position unless instructed
-          // otherwise
+          ball.kick(passAngle, power);
           this.parentContainer.sendPass(
             this,
             this.parentContainer.receivingPlayer,
@@ -201,97 +196,76 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
         break;
       case States.Dribble:
-        //    double dot = player->Team()->HomeGoal()->Facing().Dot(player->Heading());
+        const { facing } = this.parentContainer.goal;
+        const goalDot = facing.dot(this.heading);
 
-        //if the ball is between the player and the home goal, it needs to swivel
-        //the ball around by doing multiple small kicks and turns until the player
-        //is facing in the correct direction
-        if (dot < 0) {
-          //the player's heading is going to be rotated by a small amount (Pi/4)
-          //and then the ball will be kicked in that direction
+        // If back to goal kick ball at angle.
+        if (goalDot > 0) {
+          const direction = Math.sign(
+            this.heading.y * facing.x - this.heading.x * facing.y
+          );
 
-          //Vector2D direction = player->Heading();
-
-          //calculate the sign (+/–) of the angle between the player heading and the
-          //facing direction of the goal so that the player rotates around in the
-          //correct direction
-
-          //double angle = QuarterPi * -1 *
-          //player->Team()->HomeGoal()->Facing().Sign(player->Heading());
-          //Vec2DRotateAroundOrigin(direction, angle);
-
-          //this value works well when the player is attempting to control the
-          //ball and turn at the same time
-          const KickingForce = 0.8;
-          //ball.kick(this.rotation, KickingForce);
-        } //kick the ball down the field
-        else {
-          const MaxDribbleForce = 0.2;
-
-          //ball.kick(goalAngle, MaxDribbleForce);
+          ball.kick(this.rotation + direction * (Math.PI / 5), 150);
         }
-        //the player has kicked the ball so he must now change state to follow it
+
+        // Otherwise kick ball towards the goal.
+        else {
+          ball.kick(goalAngle, 200);
+        }
+
         this.setState(States.ChaseBall);
         break;
-      case States.ReceiveBall:
-        if (ballDist < 20 || this.parentContainer.isInControl) {
-          this.setState(States.ChaseBall);
-        }
-
-        if (persuitOn) {
-          this.home.x = this.scene.ball.x;
-          this.home.y = this.scene.ball.y;
-        }
-
-        if (this.isHome) {
-          this.setData({
-            persuitOn: false,
-            arriveOn: false,
-          });
-          //player->TrackBall();
-          this.setVelocity(0, 0);
-        }
-        break;
       case States.SupportAttacker:
-        if (this.parentContainer.isInControl) {
+        if (!this.parentContainer.isInControl) {
           this.setState(States.ReturnToHomeRegion);
-          return;
-        }
+        } else {
+          // If the best supporting spot changes, change the steering target.
+          const supportSpot = this.parentContainer.getSupportSpot();
+          if (supportSpot !== this.target) {
+            this.setData({ arrive: true });
+            this.setTarget(supportSpot);
+          }
 
-        //if the best supporting spot changes, change the steering target
-        if (
-          //player->Team()->GetSupportSpot() != this.home)
-          true
-        ) {
-          //player->Steering()->SetTarget(player->Team()->GetSupportSpot());
-          //player->Steering()->ArriveOn();
-          this.setData("arriveOn", true);
-        }
-
-        //if this player has a shot at the goal AND the attacker can pass
-        //the ball to him the attacker should pass the ball to this player
-        if (
-          this.parentContainer.canShoot(thisPos, MAX_POWER)
-          // player->Team()->CanShoot(player->Pos(),
-          //MAX_POWER)
-        ) {
-          this.parentContainer.requestPass(this);
-          //player->Team()->RequestPass(player);
-        }
-
-        //if this player is located at the support spot and his team still has
-        //possession, he should remain still and turn to face the ball
-        if (this.isHome) {
-          //player->Steering()->ArriveOff();
-          //the player should keep his eyes on the ball!
-          //player->TrackBall();
-          this.setVelocity(0, 0);
-          //if not threatened by another player request a pass
-          if (!this.isThreatened) {
+          // If shot from current positon possible, request a pass.
+          if (this.parentContainer.canShoot(thisPos, MAX_POWER)) {
             this.parentContainer.requestPass(this);
           }
-        }
 
+          // If this player is located at the support spot and his team still
+          // has possession, he should remain still and turn to face the ball.
+          if (this.isAtTarget) {
+            this.setData({ arrive: false });
+            this.setVelocity(0, 0);
+            this.setRotation(ballAngle);
+
+            if (!this.isThreatened) {
+              this.parentContainer.requestPass(this);
+            }
+          }
+        }
+        break;
+      case States.ReceiveBall:
+        if (ballDist < 150 || !this.parentContainer.isInControl) {
+          this.parentContainer.setReceivingPlayer(null);
+          this.setData({
+            pursuit: false,
+            arrive: false,
+          });
+          this.setState(States.ChaseBall);
+        } else {
+          if (pursuit) {
+            this.setTarget(new Vector2().setFromObject(this.scene.ball));
+          }
+
+          if (this.isAtTarget) {
+            this.setData({
+              pursuit: false,
+              arrive: false,
+            });
+            this.setRotation(ballAngle);
+            this.setVelocity(0, 0);
+          }
+        }
         break;
       case States.ChaseBall:
         this.setRotation(ballAngle);
@@ -310,7 +284,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case States.ReturnToHomeRegion:
         this.setRotation(targetAngle);
 
-        if (this.isHome) {
+        if (this.isAtHome) {
           this.setState(States.Wait);
         } else {
           this.setVelocity(
@@ -322,19 +296,19 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case States.Wait:
         this.setRotation(ballAngle);
 
-        if (!this.isHome) {
+        if (!this.isAtHome) {
           this.setState(States.ReturnToHomeRegion);
         } else if (this.scene.gameOn) {
           if (
             this.parentContainer.isInControl &&
-            this !== this.parentContainer.controllingPlayer &&
+            !this.isControllingPlayer &&
             this.isAheadOfAttacker
           ) {
             this.parentContainer.requestPass(this);
           } else if (
             this.parentContainer.closestPlayer === this &&
             !this.parentContainer.receivingPlayer &&
-            !this.scene.goalkeeeperHasBall
+            !this.scene.goalkeeperHasBall
           ) {
             this.setState(States.ChaseBall);
           }
@@ -345,45 +319,40 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     super.preUpdate(time, delta);
   }
 
-  public setArriveOn(): void {}
-
-  public setPersuitOn(): void {}
-
   public returnHome(): void {
     this.setState(States.ReturnToHomeRegion);
   }
 
-  public returnWaitingToHome(): void {
-    switch (this.state) {
-      case States.ReturnToHomeRegion:
-      case States.Wait:
-        this.setState(States.ReturnToHomeRegion);
-        break;
-      case States.ChaseBall:
-      case States.ReceiveBall:
-      case States.Dribble:
-      case States.SupportAttacker:
-      case States.KickBall:
-      default:
-        break;
-    }
+  public setTarget(value: Vector2): void {
+    this.target = value;
   }
 
-  public setHome(target: Vector2): void {
-    this._home = target;
+  private set target(value) {
+    this._target = value;
+  }
+
+  private get target(): Vector2 {
+    return this._target;
+  }
+
+  public setHome(value: Vector2): void {
+    this.home = value;
+  }
+
+  private set home(value) {
+    this._home = value;
   }
 
   private get home(): Vector2 {
     return this._home;
   }
 
-  public get isHome(): boolean {
+  public get isAtHome(): boolean {
     return new Vector2().setFromObject(this).fuzzyEquals(this.home, 10);
   }
 
-  public setReceiveBall(target: Vector2): void {
-    this.setHome(target);
-    this.setState(States.ReceiveBall);
+  public get isAtTarget(): boolean {
+    return new Vector2().setFromObject(this).fuzzyEquals(this.target, 10);
   }
 
   public support(): void {
@@ -391,11 +360,43 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public receivePass(passer: PlayerBase, target: Vector2): void {
-    this.setHome(target);
+    this.setTarget(target);
     this.setState(States.ReceiveBall);
   }
 
   public get isAheadOfAttacker(): boolean {
+    return false;
+  }
+
+  public get canPassForward(): boolean {
+    return false;
+  }
+
+  public get canPassBackward(): boolean {
+    return false;
+  }
+
+  public get ballWithinPlayerRange(): boolean {
+    return false;
+  }
+
+  public get ballWithinKickingRange(): boolean {
+    return false;
+  }
+
+  public get ballWithinSupportSpotRange(): boolean {
+    return false;
+  }
+
+  public get ballWithinTargetRange(): boolean {
+    return false;
+  }
+
+  public get ballWithinReceivingRange(): boolean {
+    return false;
+  }
+
+  public get isClosestPlayerOnPitchToBall(): boolean {
     return false;
   }
 
@@ -404,11 +405,27 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get isThreatened(): boolean {
-    return false;
+    return this.parentContainer.isOpponentWithinRadius(
+      new Vector2().setFromObject(this),
+      70
+    );
+  }
+
+  public get isControllingPlayer(): boolean {
+    return this === this.parentContainer.controllingPlayer;
   }
 
   public get inHotRegion(): boolean {
-    return false;
+    return (
+      Distance.BetweenPoints(
+        new Vector2().setFromObject(this),
+        new Vector2().setFromObject(this.parentContainer.goal)
+      ) < 300
+    );
+  }
+
+  public get heading(): Vector2 {
+    return new Vector2(1, 0).setAngle(this.rotation);
   }
 
   /*

@@ -8,7 +8,7 @@ export default class Goal extends Phaser.Physics.Arcade.Image {
     this.scene.physics.world.enable(this);
 
     this.setOrigin(isLeft ? 1 : 0, 0.5);
-    this.setData("scored", 0);
+    this.setData({ scored: 0, facing: isLeft ? 1 : -1 });
   }
 
   public set scored(value: number) {
@@ -17,5 +17,9 @@ export default class Goal extends Phaser.Physics.Arcade.Image {
 
   public get scored(): number {
     return this.getData("scored");
+  }
+
+  public get facing(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(this.getData("facing"), 0);
   }
 }

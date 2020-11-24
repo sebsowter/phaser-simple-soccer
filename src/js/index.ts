@@ -1,8 +1,10 @@
 import "phaser";
+
+import { GameConfig } from "phaser/src/core";
 import LoaderScene from "./LoaderScene";
 import GameScene from "./GameScene";
 
-const config: Phaser.Types.Core.GameConfig = {
+const config: GameConfig = {
   type: Phaser.AUTO,
   width: 1280,
   height: 704,
@@ -21,7 +23,7 @@ const config: Phaser.Types.Core.GameConfig = {
   physics: {
     default: "arcade",
     arcade: {
-      debug: true,
+      //debug: true,
       gravity: {
         y: 0,
       },

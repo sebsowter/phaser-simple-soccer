@@ -27,6 +27,7 @@ export default class Team extends Phaser.GameObjects.Container {
   public isLeft: boolean;
   public regions: any;
   public goal: Goal;
+  public homeGoal: Goal;
   public opponents: Team;
   public players: PlayerBase[];
 
@@ -40,6 +41,7 @@ export default class Team extends Phaser.GameObjects.Container {
     teamId: number,
     isLeft: boolean,
     goal: Goal,
+    homeGoal: Goal,
     regions: any
   ) {
     super(scene);
@@ -48,6 +50,7 @@ export default class Team extends Phaser.GameObjects.Container {
 
     this.isLeft = isLeft;
     this.goal = goal;
+    this.homeGoal = homeGoal;
     this.regions = regions;
 
     const team: TeamProps = Teams.find((team: TeamProps) => team.id === teamId);
@@ -94,6 +97,8 @@ export default class Team extends Phaser.GameObjects.Container {
         if (!this.isInControl) {
           this.setState(States.Defending);
         }
+
+        this.calculateSupportingPos();
         break;
     }
   }
@@ -111,60 +116,58 @@ export default class Team extends Phaser.GameObjects.Container {
         this.receivingPlayer = null;
         this.supportingPlayer = null;
         this.setHomeRegions(value);
-        this.returnAllToHome();
+        //this.returnAllToHome();
         break;
       case States.Defending:
         document.querySelector(
           `#${this.isLeft ? "red" : "blue"}-state`
         ).innerHTML = "Defending";
         this.setHomeRegions(value);
-        this.returnWaitingToHome();
+        //this.returnWaitingToHome();
         break;
       case States.Attacking:
         document.querySelector(
           `#${this.isLeft ? "red" : "blue"}-state`
         ).innerHTML = "Attacking";
         this.setHomeRegions(value);
-        this.returnAllToHome();
-        this.calculateSupportingPlayer();
+        //this.returnAllToHome();
+        this.supportingPlayer = this.calculateSupportingPlayer();
         break;
     }
 
     return this;
   }
 
-  public canShoot(
-    ballPos: Phaser.Math.Vector2,
-    power: number,
-    target?: Phaser.Math.Vector2
-  ): boolean {
+  public canShoot(ballPos: Phaser.Math.Vector2, power: number): boolean {
     const MAX_ATTEMPTS = 5;
     const { ball } = this.scene;
+    const MAX_DISTANCE = 400;
 
     let attempts = MAX_ATTEMPTS;
 
+    const randomY =
+      this.goal.y - this.goal.height / 2 + Math.random() * this.goal.height;
+
     //while (attempts--) {
-    const targetPos = new Phaser.Math.Vector2(
-      this.goal.x,
-      this.goal.y - this.goal.height / 2 + Math.random() * this.goal.height
-    );
+    const goalPos = new Phaser.Math.Vector2().setFromObject(this.goal);
+    const goalDistance = Phaser.Math.Distance.BetweenPoints(ballPos, goalPos);
+    //const time = ball.timeToCoverDistance(ballPos, goalPos, power);
 
-    const time = ball.timeToCoverDistance(ballPos, targetPos, power);
-
-    console.log(
-      "time",
-      this.isPassSafeFromAllOpponents(ballPos, targetPos, null, power)
-    );
+    //console.log(
+    //  "isPassSafeFromAllOpponents",
+    //  this.isPassSafeFromAllOpponents(ballPos, goalPos, null, power)
+    //);
 
     if (
-      time > 0 &&
-      this.isPassSafeFromAllOpponents(ballPos, targetPos, null, power)
+      // time > 0 &&
+      goalDistance < MAX_DISTANCE &&
+      this.isPassSafeFromAllOpponents(ballPos, goalPos, null, power)
     ) {
       return true;
     }
     //}
 
-    return true;
+    return false;
   }
 
   public getBestPassToReceiver(
@@ -235,14 +238,14 @@ export default class Team extends Phaser.GameObjects.Container {
     const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
 
     let ClosestToGoalSoFar = 1000; // TODO: Set max
-    let ballTarget = null;
+    let ballTarget = target;
 
     this.players.forEach((player: PlayerBase) => {
       const playerPos = new Phaser.Math.Vector2().setFromObject(player);
 
       if (
         player !== passer &&
-        passerPos.distance(passerPos) > minPassingDist * minPassingDist
+        passerPos.distance(playerPos) > minPassingDist * minPassingDist
       ) {
         if (this.getBestPassToReceiver(passer, player, ballTarget, power)) {
           const Dist2Goal = Math.abs(ballTarget.x - this.goal.x);
@@ -264,17 +267,24 @@ export default class Team extends Phaser.GameObjects.Container {
 
   public requestPass(player: PlayerBase): void {}
 
-  public isOpponentWithinRadius(player: PlayerBase, radius: number): boolean {
-    return this.players.some((props: PlayerBase) => {
-      return (
-        Phaser.Math.Distance.Between(player.x, player.y, props.x, props.y) <
-        radius
-      );
-    });
+  public isOpponentWithinRadius(
+    player: Phaser.Math.Vector2,
+    radius: number
+  ): boolean {
+    return this.opponents.players.some(
+      (opponent: PlayerBase) =>
+        Phaser.Math.Distance.Between(
+          player.x,
+          player.y,
+          opponent.x,
+          opponent.y
+        ) < radius
+    );
   }
 
   public requestSupport(): void {
-    this.calculateSupportingPlayer().support();
+    this.supportingPlayer = this.calculateSupportingPlayer();
+    this.supportingPlayer.support();
   }
 
   /*
@@ -290,7 +300,7 @@ export default class Team extends Phaser.GameObjects.Container {
    */
 
   public get allPlayersHome(): boolean {
-    return this.players.every((player: PlayerBase) => player.isHome);
+    return this.players.every((player: PlayerBase) => player.isAtHome);
   }
 
   public setHomeRegions(state: number): void {
@@ -308,12 +318,6 @@ export default class Team extends Phaser.GameObjects.Container {
     });
   }
 
-  public returnWaitingToHome(): void {
-    this.players.forEach((player: PlayerBase) => {
-      player.returnHome();
-    });
-  }
-
   /*
    * --------------------------------------------------------
    */
@@ -326,6 +330,7 @@ export default class Team extends Phaser.GameObjects.Container {
     receiver.receivePass(player, ballPos);
   }
 
+  /*
   public canPass(
     player: PlayerBase,
     receiver: PlayerBase,
@@ -337,6 +342,7 @@ export default class Team extends Phaser.GameObjects.Container {
 
     return this.isPassSafeFromAllOpponents(playerPos, ballPos, receiver, power);
   }
+  */
 
   public get supportingPlayer(): PlayerBase {
     return this._supportingPlayer;
@@ -400,8 +406,8 @@ export default class Team extends Phaser.GameObjects.Container {
         const receiverPos = new Phaser.Math.Vector2().setFromObject(receiver);
 
         if (
-          Phaser.Math.Angle.BetweenPoints(to, opponentPos) >
-          Phaser.Math.Angle.BetweenPoints(to, receiverPos)
+          Phaser.Math.Distance.BetweenPoints(opponentPos, to) >
+          Phaser.Math.Distance.BetweenPoints(receiverPos, to)
         ) {
           return true;
         }
@@ -410,12 +416,12 @@ export default class Team extends Phaser.GameObjects.Container {
       }
     }
 
-    const TimeForBall = ball.timeToCoverDistance(
+    const timeToCoverDistance = ball.timeToCoverDistance(
       new Phaser.Math.Vector2(),
       new Phaser.Math.Vector2(opponentLocal.x, 0),
       maxForce
     );
-    const reach = opponent.getData("speed") * TimeForBall;
+    const reach = opponent.getData("speed") * timeToCoverDistance;
 
     if (Math.abs(opponentLocal.y) < reach) {
       return false;
@@ -430,8 +436,6 @@ export default class Team extends Phaser.GameObjects.Container {
     receiver: PlayerBase,
     maxForce: number
   ): boolean {
-    //from.setTint(0xffff00);
-
     return this.opponents.players.every((opponent: PlayerBase) => {
       return this.isPassSafeFromOpponent(
         from,
@@ -476,6 +480,7 @@ export default class Team extends Phaser.GameObjects.Container {
 
   public setControllingPlayer(player: PlayerBase): void {
     this.controllingPlayer = player;
+    this.opponents.controllingPlayer = null;
   }
 
   public set controllingPlayer(value: PlayerBase) {
@@ -510,6 +515,10 @@ export default class Team extends Phaser.GameObjects.Container {
     this._supportingPlayer = value;
   }
 
+  public getSupportSpot(): number {
+    return this.calculateSupportingPos();
+  }
+
   public calculateSupportingPos(): number {
     let spotBest: Spot = null;
     let scoreBest: number = 0;
@@ -541,7 +550,7 @@ export default class Team extends Phaser.GameObjects.Container {
       }
       //
 
-      if (true) {
+      if (this.controllingPlayer) {
         const controllingPlayerPos = new Phaser.Math.Vector2().setFromObject(
           this.controllingPlayer
         );
@@ -581,8 +590,6 @@ export default class Team extends Phaser.GameObjects.Container {
         bestScore = score;
       }
     });
-
-    this.supportingPlayer = bestPlayer;
 
     return bestPlayer;
   }

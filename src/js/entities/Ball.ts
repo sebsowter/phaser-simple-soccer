@@ -39,50 +39,58 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     power: number,
     delta: number = 16
   ): number {
+    /*
+    const frame =  (1000 / 60);
     const speed = power * Math.pow(this.body.drag.x, delta / 1000);
     const friction = power / this.body.drag.x;
     const distance = Phaser.Math.Distance.BetweenPoints(from, to);
     const time = speed * speed + 2 * distance * friction;
 
-    return 2000;
-    if (time <= 0) return -1;
+    
+    const position = from.clone().setAngle(0).x;
+    const target = to.clone().setAngle(0).x;
+    const velocity = new Phaser.Math.Vector2().setFromObject(
+      this.body.velocity
+    ).setAngle(0).x
 
-    return (0 - speed) / friction;
+
+    let i = 0;
+    let time = 0;
+
+    while() {
+      const drag = Math.pow(DRAG, i);
+
+      velocity *= drag;
+      position += Math.sqrt(velocity);
+
+
+      time+=frame
+      i++
+    }
+
+    return time <= 0 ? -1 : time;
+*/
+    return 2000;
   }
 
   public futurePosition(time: number): Phaser.Math.Vector2 {
-    const miliPerFrame = 1000 / 60;
-    //console.log("miliPerFrame", miliPerFrame);
-    const timeDelta = time / miliPerFrame;
-    //console.log("timeDelta", timeDelta);
-    const pow = Math.pow(DRAG, timeDelta);
-    //console.log("pow", pow);
-    //console.log("this.body.velocity.y", this.body.velocity.x);
-    const positionX = this.x + this.body.velocity.x * pow;
-    const positionY = this.y + this.body.velocity.y * pow;
+    const frames = time / (1000 / 60);
+    const position = new Phaser.Math.Vector2().setFromObject(this);
+    const velocity = new Phaser.Math.Vector2().setFromObject(
+      this.body.velocity
+    );
 
-    this.scene.add.circle(positionX, positionY, 8, 0xff9900);
+    for (let i = 0; i < frames; i++) {
+      const drag = Math.pow(DRAG, i);
 
-    return new Phaser.Math.Vector2(positionX, positionY);
-  }
+      velocity.x *= drag;
+      velocity.y *= drag;
+      position.x += Math.sign(velocity.x) * Math.sqrt(Math.abs(velocity.x));
+      position.y += Math.sign(velocity.y) * Math.sqrt(Math.abs(velocity.y));
+    }
 
-  public preUpdate(time: Number, delta: number): void {
-    //console.log("delta", Math.pow(DRAG * DRAG, delta / 1000));
-    const delta2 = 1000 / delta / 60;
-    //console.log("delta", delta2);
-    const dragX = DRAG * delta2;
-    //console.log("dragX", dragX);
+    this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
 
-    //this.body.velocity.x *= DRAG;
-    // this.body.velocity.y *= DRAG;
-
-    // this.body.speed = Math.sqrt(
-    //   this.body.velocity.x * this.body.velocity.x +
-    //     this.body.velocity.y * this.body.velocity.y
-    // );
-    //this.setVelocity(newX, newY);
-
-    //console.log("ff", ff);
-    //super.preUpdate(time, delta);
+    return new Phaser.Math.Vector2(position.x, position.y);
   }
 }

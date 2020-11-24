@@ -19,7 +19,7 @@ export default class GameScene extends Phaser.Scene {
   public init(): void {
     this.data.set(
       {
-        keeperHasBall: false,
+        goalkeeperHasBall: false,
         gameOn: false,
       },
       false
@@ -27,56 +27,67 @@ export default class GameScene extends Phaser.Scene {
   }
 
   public create(): void {
-    const WALLS = 64;
+    const BORDER = 64;
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
 
-    this.goalA = new Goal(this, WALLS, height / 2, true);
-    this.goalB = new Goal(this, width - WALLS, height / 2, false);
+    this.goalA = new Goal(this, BORDER, height / 2, true);
+    this.goalB = new Goal(this, width - BORDER, height / 2, false).setFlipX(
+      true
+    );
     this.ball = new Ball(this, width / 2, height / 2).setDepth(2);
-    this.teamA = new Team(this, 1, true, this.goalB, redRegions).setDepth(2);
-    this.teamB = new Team(this, 2, false, this.goalA, blueRegions).setDepth(2);
+    this.teamA = new Team(
+      this,
+      1,
+      true,
+      this.goalB,
+      this.goalA,
+      redRegions
+    ).setDepth(2);
+    this.teamB = new Team(
+      this,
+      2,
+      false,
+      this.goalA,
+      this.goalB,
+      blueRegions
+    ).setDepth(2);
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
+    const point1 = new Phaser.GameObjects.Sprite(
+      this,
+      200,
+      352,
+      "sprites",
+      1
+    ).setDepth(4);
+    this.add.existing(point1);
+
+    const pin = -0.52;
+    const point2 = new Phaser.GameObjects.Sprite(this, 500, 352, "sprites", 2)
+      .setDepth(4)
+      .setRotation(Math.PI * pin);
+    this.add.existing(point2);
+
+    const v1 = new Phaser.Math.Vector2(1, 0);
+    const v2 = new Phaser.Math.Vector2(1, 0);
+    console.log("v1", v1);
+    console.log("v2", v2);
+    v2.rotate(Math.PI * pin);
+    //v2.setAngle(Math.PI * -0.45);
+    console.log("v2", v2);
+    const dot = v1.dot(v2);
+    console.log("dot", dot);
+
     this.physics.world.setBounds(
-      WALLS,
-      WALLS,
-      width - WALLS * 2,
-      height - WALLS * 2
+      BORDER,
+      BORDER,
+      width - BORDER * 2,
+      height - BORDER * 2
     );
 
     this.cameras.main.setBounds(0, 0, width, height);
-
-    /*
-    const tilemap = this.make.tilemap({
-      key: "tilemap",
-    });
-    const tileset = tilemap.addTilesetImage("tiles");
-    const layer = tilemap.createDynamicLayer(0, tileset, 0, 0);
-    const mario = new MarioSprite(this, 32, 192);
-    const { widthInPixels, heightInPixels } = tilemap;
-
-    layer.forEachTile(function (tile: Phaser.Tilemaps.Tile) {
-      switch (tile.index) {
-        case 2:
-        case 6:
-          tile.setCollision(true);
-          break;
-        case 9:
-        case 10:
-          tile.setCollision(false, false, true, false, false);
-          break;
-      }
-    }, this);
-
-    this.physics.world.setBounds(0, 0, widthInPixels, heightInPixels);
-    this.physics.world.TILE_BIAS = 8;
-    this.physics.add.collider(mario, layer);
-
-    this.cameras.main.setBounds(0, 0, widthInPixels, heightInPixels);
-    this.cameras.main.startFollow(mario, true);
-    */
   }
 
   public update(): void {
@@ -89,12 +100,12 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  public set goalkeeeperHasBall(value: boolean) {
-    this.data.set("keeperHasBall", value);
+  public set goalkeeperHasBall(value: boolean) {
+    this.data.set("goalkeeperHasBall", value);
   }
 
-  public get goalkeeeperHasBall(): boolean {
-    return this.data.get("keeperHasBall");
+  public get goalkeeperHasBall(): boolean {
+    return this.data.get("goalkeeperHasBall");
   }
 
   public set gameOn(value: boolean) {
