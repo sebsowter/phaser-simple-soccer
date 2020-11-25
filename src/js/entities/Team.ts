@@ -138,37 +138,28 @@ export default class Team extends Phaser.GameObjects.Container {
     return this;
   }
 
-  public canShoot(ballPos: Phaser.Math.Vector2, power: number): boolean {
-    const MAX_ATTEMPTS = 5;
-    const { ball } = this.scene;
-    const MAX_DISTANCE = 400;
+  public canShoot(ballPos: Phaser.Math.Vector2, power: number): any[] {
+    const shootPos = new Phaser.Math.Vector2().setFromObject(this.goal);
 
-    //while (attempts--) {
-    const goalPos = new Phaser.Math.Vector2().setFromObject(this.goal);
-    const goalDistance = Phaser.Math.Distance.BetweenPoints(ballPos, goalPos);
-    const time = ball.timeToCoverDistance(ballPos, goalPos, power);
+    let attempts = 8;
 
-    //console.log(
-    //  "isPassSafeFromAllOpponents",
-    //  this.isPassSafeFromAllOpponents(ballPos, goalPos, null, power)
-    //);
+    while (attempts--) {
+      shootPos.y = -(this.goal.height / 2) + Math.random() * this.goal.height;
 
-    if (
-      time > 0 &&
-      goalDistance < MAX_DISTANCE &&
-      this.isPassSafeFromAllOpponents(ballPos, goalPos, null, power)
-    ) {
-      return true;
+      if (
+        this.scene.ball.timeToCoverDistance(ballPos, shootPos, power) >= 0 &&
+        this.isPassSafeFromAllOpponents(ballPos, shootPos, null, power)
+      ) {
+        return [true, shootPos];
+      }
     }
-    //}
 
-    return false;
+    return [false, shootPos];
   }
 
   public getBestPassToReceiver(
     passer: PlayerBase,
     receiver: PlayerBase,
-    target: Phaser.Math.Vector2,
     power: number
   ) {
     const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
@@ -183,79 +174,72 @@ export default class Team extends Phaser.GameObjects.Container {
       return false;
     }
 
-    let InterceptRange = time * receiver.getData("speed");
-    const ScalingFactor = 0.3;
-    InterceptRange *= ScalingFactor;
-
-    const receiverDist = Phaser.Math.Distance.BetweenPoints(
-      ballPos,
-      receiverPos
-    );
+    const scalingFactor = 0.3;
+    const interceptRange = time * receiver.getData("speed") * scalingFactor;
     const receiverAngle = Phaser.Math.Angle.BetweenPoints(ballPos, receiverPos);
     const passLeft = new Phaser.Math.Vector2(
-      receiverPos.x + InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
-      receiverPos.y + InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
+      receiverPos.x + interceptRange * Math.cos(receiverAngle - Math.PI / 2),
+      receiverPos.y + interceptRange * Math.sin(receiverAngle - Math.PI / 2)
     );
     const passRight = new Phaser.Math.Vector2(
-      receiverPos.x - InterceptRange * Math.cos(receiverAngle - Math.PI / 2),
-      receiverPos.y - InterceptRange * Math.sin(receiverAngle - Math.PI / 2)
+      receiverPos.x - interceptRange * Math.cos(receiverAngle - Math.PI / 2),
+      receiverPos.y - interceptRange * Math.sin(receiverAngle - Math.PI / 2)
     );
     const passes: Phaser.Math.Vector2[] = [passLeft, receiverPos, passRight];
 
     let closestSoFar = 1000;
     let result = false;
+    let passTarget = null;
 
-    for (let i = 0; i < passes.length; i++) {
-      const dist = Math.abs(passes[i].x - this.goal.x);
+    passes.forEach((pass: Phaser.Math.Vector2) => {
+      const dist = Math.abs(pass.x - this.goal.x);
 
       if (
         dist < closestSoFar &&
         // TODO: and within pitch bounds
-        this.isPassSafeFromAllOpponents(ballPos, passes[i], receiver, power)
+        this.isPassSafeFromAllOpponents(ballPos, pass, receiver, power)
       ) {
         closestSoFar = dist;
-        target = passes[i];
+        passTarget = pass;
         result = true;
       }
-    }
+    });
 
-    return result;
+    return [result, passTarget];
   }
 
   public findPass(
     passer: PlayerBase,
-    receiver: PlayerBase,
-    target: Phaser.Math.Vector2,
     power: number,
     minPassingDist: number
-  ): boolean {
+  ): any[] {
     const passerPos = new Phaser.Math.Vector2().setFromObject(passer);
-    const ballPos = new Phaser.Math.Vector2().setFromObject(this.scene.ball);
 
-    let ClosestToGoalSoFar = 1000; // TODO: Set max
-    let ballTarget = target;
+    let closestToGoalSoFar = 1000;
+    let targetPos = null;
+    let receiver = null;
 
     this.players.forEach((player: PlayerBase) => {
       const playerPos = new Phaser.Math.Vector2().setFromObject(player);
 
-      if (
-        player !== passer &&
-        passerPos.distance(playerPos) > minPassingDist * minPassingDist
-      ) {
-        if (this.getBestPassToReceiver(passer, player, ballTarget, power)) {
-          const Dist2Goal = Math.abs(ballTarget.x - this.goal.x);
+      if (player !== passer && passerPos.distance(playerPos) > minPassingDist) {
+        const bestPass = this.getBestPassToReceiver(passer, player, power);
 
-          if (Dist2Goal < ClosestToGoalSoFar) {
-            ClosestToGoalSoFar = Dist2Goal;
+        if (bestPass[0]) {
+          const passPoss = bestPass[1];
+          const goalDistance = Math.abs(passPoss.x - this.goal.x);
+
+          if (goalDistance < closestToGoalSoFar) {
+            closestToGoalSoFar = goalDistance;
             receiver = player;
-            target = ballTarget;
+            targetPos = passPoss;
           }
         }
       }
     });
 
-    if (receiver) return true;
-    else return false;
+    if (receiver) return [true, receiver, targetPos];
+    else return [false, null, null];
   }
 
   // ------------------------------------------------

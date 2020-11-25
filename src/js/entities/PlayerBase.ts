@@ -110,8 +110,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public preUpdate(time: number, delta: number): void {
-    const POT_SHOT = 0.5;
-    const MAX_POWER = 0.5;
+    const POT_SHOT = 0.1;
+    const MAX_SHOT_POWER = 500;
+    const MAX_PASS_POWER = 350;
     const [speed, pursuit, arrive] = this.getData([
       "speed",
       "pursuit",
@@ -126,57 +127,55 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     const ballDist = Distance.BetweenPoints(thisPos, ballPos);
     const targetAngle = Angle.BetweenPoints(thisPos, this.home);
     const MIN_PASS_DISTANCE = 10;
-    let dot;
 
     switch (this.state) {
       case States.KickBall:
-        const power = 500;
         const ERROR_MARGIN = Math.PI / 16;
-        const toBall = ballPos.subtract(thisPos).normalize();
+        const dot = this.heading.dot(
+          ballPos.clone().subtract(thisPos).normalize()
+        );
+        const power = MAX_SHOT_POWER * dot;
+        const powerPass = MAX_PASS_POWER * dot;
+        console.log("power", power);
+        const canShoot = this.parentContainer.canShoot(ballPos, power);
+        console.log("canShoot", canShoot);
 
-        dot = thisPos.clone().dot(toBall);
+        const canPass = this.parentContainer.findPass(
+          this,
+          power,
+          MIN_PASS_DISTANCE
+        );
+        console.log("canPass", canPass);
 
         if (
           this.parentContainer.receivingPlayer ||
-          goalkeeperHasBall //||
-          // dot < 0 / ball behind player
+          this.scene.goalkeeperHasBall ||
+          dot < 0
         ) {
           this.setState(States.ChaseBall);
-        } else if (
-          this.parentContainer.canShoot(ballPos, power)
-          //|| Math.random() < POT_SHOT
-        ) {
-          //const power = MAX_POWER * dot;
-          //console.log("dot", dot);
-
+        } else if (canShoot[0] || Math.random() < POT_SHOT) {
           console.log("Shoooooooooooot!");
-
-          const randomAngle =
-            goalAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-
-          ball.kick(randomAngle, power);
+          const shootPos = canShoot[1];
+          const shootAngle = Angle.BetweenPoints(thisPos, shootPos);
+          //const randomAngle =
+          //shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
+          ball.kick(shootAngle, power);
           this.setState(States.Wait);
           this.parentContainer.requestSupport();
-        } else if (
-          this.isThreatened &&
-          this.parentContainer.findPass(
-            this,
-            this.parentContainer.receivingPlayer,
-            ballPos,
-            power,
-            MIN_PASS_DISTANCE
-          )
-        ) {
+        } else if (this.isThreatened && canPass[0]) {
           console.log("Pass");
-          const passAngle =
-            ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-
-          ball.kick(passAngle, power);
-          this.parentContainer.sendPass(
-            this,
-            this.parentContainer.receivingPlayer,
-            ballPos
+          const receiver = canPass[1];
+          const targetPos = canPass[2];
+          const targeAngle = Phaser.Math.Angle.BetweenPoints(
+            thisPos,
+            targetPos
           );
+
+          //const passAngle =
+          //ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
+
+          ball.kick(targeAngle, powerPass);
+          this.parentContainer.sendPass(this, receiver, targetPos);
           this.parentContainer.requestSupport();
           this.setState(States.Wait);
         } else {
@@ -184,7 +183,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           this.parentContainer.requestSupport();
           this.setState(States.Dribble);
         }
-
         break;
       case States.Dribble:
         // If back to goal kick ball at angle.
@@ -220,7 +218,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           }
 
           // If shot from current positon possible, request a pass.
-          if (this.parentContainer.canShoot(thisPos, MAX_POWER)) {
+          if (this.parentContainer.canShoot(thisPos, MAX_SHOT_POWER)) {
             this.parentContainer.requestPass(this);
           }
 
