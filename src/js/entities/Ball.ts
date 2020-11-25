@@ -23,7 +23,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     if (!this.getData("isKicking")) {
       this.setData({ isKicking: true });
       this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
-      this.futurePosition(2000);
+      this.futurePosition(750);
       this.scene.time.delayedCall(
         250,
         function () {
@@ -47,41 +47,25 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   public timeToCoverDistance(
     from: Phaser.Math.Vector2,
     to: Phaser.Math.Vector2,
-    power: number,
-    delta: number = 16
+    power: number
   ): number {
-    /*
-    const frame =  (1000 / 60);
-    const speed = power * Math.pow(this.body.drag.x, delta / 1000);
-    const friction = power / this.body.drag.x;
+    const delta = 1 / 60;
     const distance = Phaser.Math.Distance.BetweenPoints(from, to);
-    const time = speed * speed + 2 * distance * friction;
 
-    
-    const position = from.clone().setAngle(0).x;
-    const target = to.clone().setAngle(0).x;
-    const velocity = new Phaser.Math.Vector2().setFromObject(
-      this.body.velocity
-    ).setAngle(0).x
-
-
-    let i = 0;
+    let x = 0;
     let time = 0;
 
-    while() {
-      const drag = Math.pow(DRAG, i);
+    while (power > 0.1 && x < distance) {
+      power *= DRAG;
+      x += delta * power;
+      time += delta;
 
-      velocity *= drag;
-      position += Math.sqrt(velocity);
-
-
-      time+=frame
-      i++
+      if (power <= 0.1) {
+        time = -1;
+      }
     }
 
-    return time <= 0 ? -1 : time;
-*/
-    return 2000;
+    return time;
   }
 
   public futurePosition(time: number): Phaser.Math.Vector2 {
@@ -101,6 +85,6 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
 
     this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
 
-    return new Phaser.Math.Vector2(position.x, position.y);
+    return position;
   }
 }
