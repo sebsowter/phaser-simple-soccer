@@ -1,7 +1,8 @@
 import { Angle, Distance, Vector2 } from "phaser/src/math";
-import GameScene from "../GameScene";
+import GameScene from "../scenes/GameScene";
 import Team from "./Team";
 import { PlayerProps } from "../types";
+import { setText } from "../utils";
 
 enum States {
   Wait = 0,
@@ -49,16 +50,14 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public setState(value: number): this {
+    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
+
     switch (value) {
       case States.ChaseBall:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "ChaseBall";
+        setText(selector, "ChaseBall");
         break;
       case States.ReceiveBall:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "ReceiveBall";
+        setText(selector, "ReceiveBall");
         const PASS_THREAT_RADIUS = 70;
 
         this.parentContainer.setControllingPlayer(this);
@@ -82,22 +81,16 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       case States.Dribble:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "Dribble";
+        setText(selector, "Dribble");
         this.parentContainer.setControllingPlayer(this);
         break;
       case States.SupportAttacker:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "SupportAttacker";
+        setText(selector, "SupportAttacker");
         this.setData({ arrive: true });
         this.setTarget(this.parentContainer.getSupportSpot());
         break;
       case States.KickBall:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "KickBall";
+        setText(selector, "KickBall");
         this.parentContainer.setControllingPlayer(this);
 
         if (!this.isReadyForNextKick) {
@@ -105,14 +98,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       case States.ReturnToHomeRegion:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "ReturnToHomeRegion";
+        setText(selector, "ReturnToHomeRegion");
         break;
       case States.Wait:
-        document.querySelector(
-          `#${this.getData("name")}-${this.getData("index") + 1}`
-        ).innerHTML = "Wait";
+        setText(selector, "Wait");
         this.setVelocity(0, 0);
         break;
     }
@@ -274,9 +263,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case States.ChaseBall:
         this.setRotation(ballAngle);
 
-        if (Distance.BetweenPoints(thisPos, ballPos) < 5) {
+        if (this.ballWithinKickingRange) {
           this.setState(States.KickBall);
-        } else if (this.parentContainer.closestPlayer === this) {
+        } else if (this.isClosestPlayerToBall) {
           this.setVelocity(
             speed * Math.cos(ballAngle),
             speed * Math.sin(ballAngle)
@@ -385,7 +374,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get ballWithinKickingRange(): boolean {
-    return false;
+    const thisPos = new Vector2().setFromObject(this);
+    const ballPos = new Vector2().setFromObject(this.scene.ball);
+
+    return Distance.BetweenPoints(thisPos, ballPos) < 5;
   }
 
   public get ballWithinSupportSpotRange(): boolean {
@@ -400,8 +392,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  public get isClosestPlayerOnPitchToBall(): boolean {
-    return false;
+  public get isClosestPlayerToBall(): boolean {
+    return this.parentContainer.closestPlayer === this;
   }
 
   public get isReadyForNextKick(): boolean {

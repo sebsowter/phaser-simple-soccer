@@ -1,10 +1,7 @@
 import "phaser";
+import { LoaderScene, GameScene } from "./scenes";
 
-import { GameConfig } from "phaser/src/core";
-import LoaderScene from "./LoaderScene";
-import GameScene from "./GameScene";
-
-const config: GameConfig = {
+const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: 1280,
   height: 704,
@@ -33,5 +30,5 @@ const config: GameConfig = {
 };
 
 window.addEventListener("load", function () {
-  new Phaser.Game(config);
+  const game = new Phaser.Game(config);
 });

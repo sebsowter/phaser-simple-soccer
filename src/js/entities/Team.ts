@@ -2,7 +2,7 @@ import PlayerBase from "./PlayerBase";
 import Spot from "./Spot";
 import { Players, Teams } from "../constants";
 import { PlayerProps, TeamProps } from "../types";
-import GameScene from "../GameScene";
+import GameScene from "../scenes/GameScene";
 import Goal from "./Goal";
 
 enum States {
@@ -143,15 +143,10 @@ export default class Team extends Phaser.GameObjects.Container {
     const { ball } = this.scene;
     const MAX_DISTANCE = 400;
 
-    let attempts = MAX_ATTEMPTS;
-
-    const randomY =
-      this.goal.y - this.goal.height / 2 + Math.random() * this.goal.height;
-
     //while (attempts--) {
     const goalPos = new Phaser.Math.Vector2().setFromObject(this.goal);
     const goalDistance = Phaser.Math.Distance.BetweenPoints(ballPos, goalPos);
-    //const time = ball.timeToCoverDistance(ballPos, goalPos, power);
+    const time = ball.timeToCoverDistance(ballPos, goalPos, power);
 
     //console.log(
     //  "isPassSafeFromAllOpponents",
@@ -159,7 +154,7 @@ export default class Team extends Phaser.GameObjects.Container {
     //);
 
     if (
-      // time > 0 &&
+      time > 0 &&
       goalDistance < MAX_DISTANCE &&
       this.isPassSafeFromAllOpponents(ballPos, goalPos, null, power)
     ) {

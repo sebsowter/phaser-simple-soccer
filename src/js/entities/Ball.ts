@@ -14,25 +14,13 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.body.setDrag(DRAG, DRAG);
     this.body.useDamping = true;
 
-    this.setData({ scored: 0, isKicking: false });
+    this.setData({ scored: 0 });
     this.kick(Math.PI * 1.2, 200);
   }
 
   public kick(angle: number, power: number): void {
-    //console.log("Kick!", power);
-    if (!this.getData("isKicking")) {
-      this.setData({ isKicking: true });
-      this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
-      this.futurePosition(750);
-      this.scene.time.delayedCall(
-        250,
-        function () {
-          this.setData({ isKicking: false });
-        },
-        [],
-        this
-      );
-    }
+    this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
+    this.futurePosition(750);
   }
 
   public trap(player: PlayerBase): void {

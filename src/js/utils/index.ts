@@ -1,14 +1,5 @@
-import PlayerBase from "../entities/PlayerBase";
-import Spot from "../entities/Spot";
+const setText = (selector: string, value: string) => {
+  document.querySelector(selector).innerHTML = value;
+};
 
-interface SpotProps {
-  canPassScore: number;
-  canScoreFromPositionScore: number;
-  distanceFromControllingPlayerScore: number;
-}
-
-//function calculateSupportingPlayer(players: PlayerBase[]): PlayerBase {
-
-//}
-
-//export { calculateSupportingPlayer };
+export { setText };

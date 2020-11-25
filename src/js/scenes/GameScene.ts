@@ -1,5 +1,5 @@
-import { Ball, Goal, Team } from "./entities";
-import { redRegions, blueRegions } from "./constants";
+import { Ball, Goal, Team } from "../entities";
+import { redRegions, blueRegions } from "../constants";
 
 export default class GameScene extends Phaser.Scene {
   public ball: Ball;
