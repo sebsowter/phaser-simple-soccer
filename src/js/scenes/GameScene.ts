@@ -31,27 +31,11 @@ export default class GameScene extends Phaser.Scene {
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
 
-    this.goalA = new Goal(this, BORDER, height / 2, true);
-    this.goalB = new Goal(this, width - BORDER, height / 2, false).setFlipX(
-      true
-    );
-    this.ball = new Ball(this, width / 2, height / 2).setDepth(2);
-    this.teamA = new Team(
-      this,
-      1,
-      true,
-      this.goalB,
-      this.goalA,
-      redRegions
-    ).setDepth(2);
-    this.teamB = new Team(
-      this,
-      2,
-      false,
-      this.goalA,
-      this.goalB,
-      blueRegions
-    ).setDepth(2);
+    this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
+    this.goalA = new Goal(this, BORDER, height / 2, 1);
+    this.goalB = new Goal(this, width - BORDER, height / 2, -1).setFlipX(true);
+    this.teamA = new Team(this, 1, true, this.goalB, redRegions).setDepth(2);
+    this.teamB = new Team(this, 2, false, this.goalA, blueRegions).setDepth(2);
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
@@ -64,7 +48,33 @@ export default class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, width, height);
 
-    this.test();
+    //this.test();
+  }
+
+  public update(): void {
+    switch (this.gameOn) {
+      case false:
+        if (this.teamA.allPlayersHome && this.teamB.allPlayersHome) {
+          this.gameOn = true;
+        }
+        break;
+    }
+  }
+
+  public set goalkeeperHasBall(value: boolean) {
+    this.data.set("goalkeeperHasBall", value);
+  }
+
+  public get goalkeeperHasBall(): boolean {
+    return this.data.get("goalkeeperHasBall");
+  }
+
+  public set gameOn(value: boolean) {
+    this.data.set("gameOn", value);
+  }
+
+  public get gameOn(): boolean {
+    return this.data.get("gameOn");
   }
 
   private test(): void {
@@ -92,31 +102,5 @@ export default class GameScene extends Phaser.Scene {
     console.log("v2", v2);
     const dot = v1.dot(v2);
     console.log("dot", dot);
-  }
-
-  public update(): void {
-    switch (this.gameOn) {
-      case false:
-        if (this.teamA.allPlayersHome && this.teamB.allPlayersHome) {
-          this.gameOn = true;
-        }
-        break;
-    }
-  }
-
-  public set goalkeeperHasBall(value: boolean) {
-    this.data.set("goalkeeperHasBall", value);
-  }
-
-  public get goalkeeperHasBall(): boolean {
-    return this.data.get("goalkeeperHasBall");
-  }
-
-  public set gameOn(value: boolean) {
-    this.data.set("gameOn", value);
-  }
-
-  public get gameOn(): boolean {
-    return this.data.get("gameOn");
   }
 }

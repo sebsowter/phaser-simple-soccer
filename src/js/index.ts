@@ -17,6 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
     antialias: false,
     antialiasGL: false,
   },
+  parent: "phaser",
   physics: {
     default: "arcade",
     arcade: {

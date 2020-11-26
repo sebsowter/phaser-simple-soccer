@@ -18,8 +18,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public scene: GameScene;
   public body: Phaser.Physics.Arcade.Body;
   public parentContainer: Team;
-  private _home: Vector2;
-  private _target: Vector2;
+
+  private home: Vector2;
+  private target: Vector2;
 
   constructor(
     scene: Phaser.Scene,
@@ -64,7 +65,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         this.parentContainer.setReceivingPlayer(this);
 
         if (
-          this.inHotRegion ||
+          this.isWithinShootingRange ||
           (Math.random() < 0.5 &&
             !this.parentContainer.isOpponentWithinRadius(
               new Vector2().setFromObject(this),
@@ -110,7 +111,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public preUpdate(time: number, delta: number): void {
-    const POT_SHOT = 0.1;
+    const POT_SHOT = 0.05;
     const MAX_SHOT_POWER = 500;
     const MAX_PASS_POWER = 350;
     const [speed, pursuit, arrive] = this.getData([
@@ -118,7 +119,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       "pursuit",
       "arrive",
     ]);
-    const { ball, goalkeeperHasBall } = this.scene;
+    const { ball } = this.scene;
     const thisPos = new Vector2().setFromObject(this);
     const goalPos = new Vector2().setFromObject(this.parentContainer.goal);
     const goalAngle = Angle.BetweenPoints(thisPos, goalPos);
@@ -127,11 +128,12 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     const ballDist = Distance.BetweenPoints(thisPos, ballPos);
     const targetAngle = Angle.BetweenPoints(thisPos, this.home);
     const MIN_PASS_DISTANCE = 10;
+    const ERROR_MARGIN = Math.PI / 16;
 
     switch (this.state) {
       case States.KickBall:
-        const ERROR_MARGIN = Math.PI / 16;
-        const dot = this.heading.dot(
+        console.log("-----------------------");
+        const dot = this.facing.dot(
           ballPos.clone().subtract(thisPos).normalize()
         );
         const power = MAX_SHOT_POWER * dot;
@@ -157,9 +159,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           console.log("Shoooooooooooot!");
           const shootPos = canShoot[1];
           const shootAngle = Angle.BetweenPoints(thisPos, shootPos);
-          //const randomAngle =
-          //shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-          ball.kick(shootAngle, power);
+          const randomAngle =
+            shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
+          ball.kick(randomAngle, power);
           this.setState(States.Wait);
           this.parentContainer.requestSupport();
         } else if (this.isThreatened && canPass[0]) {
@@ -175,31 +177,30 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           //ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
 
           ball.kick(targeAngle, powerPass);
-          this.parentContainer.sendPass(this, receiver, targetPos);
+          receiver.receivePass(this, targetPos);
           this.parentContainer.requestSupport();
           this.setState(States.Wait);
         } else {
-          //console.log("Dribble");
+          console.log("Dribble");
           this.parentContainer.requestSupport();
           this.setState(States.Dribble);
         }
         break;
       case States.Dribble:
-        // If back to goal kick ball at angle.
         const { facing } = this.parentContainer.goal;
-        const goalDot = facing.dot(this.heading);
+        const goalDot = facing.dot(this.facing);
 
+        // If back to goal kick ball at an angle to turn.
         if (goalDot > 0) {
           const direction = Math.sign(
-            this.heading.y * facing.x - this.heading.x * facing.y
+            this.facing.y * facing.x - this.facing.x * facing.y
           );
 
           ball.kick(this.rotation + direction * (Math.PI / 5), 150);
         }
-
         // Otherwise kick ball towards the goal.
         else {
-          ball.kick(goalAngle, 200);
+          ball.kick(goalAngle, 250);
         }
 
         this.setState(States.ChaseBall);
@@ -261,7 +262,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case States.ChaseBall:
         this.setRotation(ballAngle);
 
-        if (this.ballWithinKickingRange) {
+        if (this.isBallWithinKickingRange) {
           this.setState(States.KickBall);
         } else if (this.isClosestPlayerToBall) {
           this.setVelocity(
@@ -318,24 +319,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this.target = value;
   }
 
-  private set target(value) {
-    this._target = value;
-  }
-
-  private get target(): Vector2 {
-    return this._target;
-  }
-
   public setHome(value: Vector2): void {
     this.home = value;
-  }
-
-  private set home(value) {
-    this._home = value;
-  }
-
-  private get home(): Vector2 {
-    return this._home;
   }
 
   public get isAtHome(): boolean {
@@ -371,13 +356,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  public get ballWithinKickingRange(): boolean {
-    const thisPos = new Vector2().setFromObject(this);
-    const ballPos = new Vector2().setFromObject(this.scene.ball);
-
-    return Distance.BetweenPoints(thisPos, ballPos) < 5;
-  }
-
   public get ballWithinSupportSpotRange(): boolean {
     return false;
   }
@@ -390,12 +368,33 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  public get isClosestPlayerToBall(): boolean {
-    return this.parentContainer.closestPlayer === this;
-  }
-
   public get isReadyForNextKick(): boolean {
     return true;
+  }
+
+  public get isClosestPlayerToBall(): boolean {
+    return this === this.parentContainer.closestPlayer;
+  }
+
+  public get isControllingPlayer(): boolean {
+    return this === this.parentContainer.controllingPlayer;
+  }
+
+  public get isBallWithinKickingRange(): boolean {
+    return (
+      new Vector2()
+        .setFromObject(this)
+        .distance(new Vector2().setFromObject(this.scene.ball)) < 5
+    );
+  }
+
+  public get isWithinShootingRange(): boolean {
+    return (
+      Distance.BetweenPoints(
+        new Vector2().setFromObject(this),
+        new Vector2().setFromObject(this.parentContainer.goal)
+      ) < 300
+    );
   }
 
   public get isThreatened(): boolean {
@@ -405,72 +404,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
-  public get isControllingPlayer(): boolean {
-    return this === this.parentContainer.controllingPlayer;
-  }
-
-  public get inHotRegion(): boolean {
-    return (
-      Distance.BetweenPoints(
-        new Vector2().setFromObject(this),
-        new Vector2().setFromObject(this.parentContainer.goal)
-      ) < 300
-    );
-  }
-
-  public get heading(): Vector2 {
+  public get facing(): Vector2 {
     return new Vector2(1, 0).setAngle(this.rotation);
   }
-
-  /*
-  public calculateSupportSpot(): void {
-    const spots: Spot[] = [];
-
-    let spotBest: Spot = null;
-    let spotBestScore: number = 0;
-
-    for (let y = 0; y < 4; y++) {
-      for (let x = 0; x < 4; x++) {
-        spots.push(new Spot(x * 8, y * 8));
-      }
-    }
-
-    spots.forEach((spot: Spot) => {
-      spot.score = 0;
-
-      let canPass = false;
-
-      if (canPass) {
-        // this.controllingPlayer;
-
-        spot.score += spot.canPassScore;
-      }
-
-      let canShoot = false;
-
-      if (canShoot) {
-        spot.score += spot.canShootScore;
-      }
-      //
-
-      if (true) {
-        const OPTIMAL_DISTANCE = 200;
-        const distance = distanceBetween(spot, this.controllingPlayer);
-        const normal = Math.abs(OPTIMAL_DISTANCE - distance);
-
-        if (normal < OPTIMAL_DISTANCE) {
-          // Normalize the distance and add it to the score
-          spot.score +=
-            (spot.distanceScore * (OPTIMAL_DISTANCE - normal)) /
-            OPTIMAL_DISTANCE;
-        }
-      }
-
-      if (spot.score > spotBestScore) {
-        spotBest = spot;
-        spotBestScore = spot.score;
-      }
-    });
-  }
-  */
 }

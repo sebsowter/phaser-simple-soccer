@@ -5,29 +5,50 @@
     <title><%= htmlWebpackPlugin.options.title %></title>
     <style>
       body {
-        font-family: sans-serif;
-        font-size: 0.9em;
+        font-family: "Courier New", Courier, monospace;
+        background-color: #333333;
+        color: #cccccc;
       }
     </style>
   </head>
   <body>
+    <div id="phaser"></div>
     <div>
       <table>
         <thead>
-          <th>Red</th>
-          <th>0-0</th>
-          <th>Blue</th>
+          <th style="color: red">Red</th>
+          <th style="color: blue">Blue</th>
         </thead>
         <tr>
           <td>
-            <table width="320">
+            <table width="400">
               <tr>
-                <td width="150">Team:</td>
+                <td width="150">State:</td>
                 <td id="red-state">-</td>
+              </tr>
+              <tr>
+                <td>----</td>
+                <td>----</td>
+              </tr>
+              <tr>
+                <td width="150">Closest:</td>
+                <td id="red-closest">-</td>
               </tr>
               <tr>
                 <td width="150">Controlling:</td>
                 <td id="red-controlling">-</td>
+              </tr>
+              <tr>
+                <td width="150">Supporting:</td>
+                <td id="red-supporting">-</td>
+              </tr>
+              <tr>
+                <td width="150">Receiving:</td>
+                <td id="red-receiving">-</td>
+              </tr>
+              <tr>
+                <td>----</td>
+                <td>----</td>
               </tr>
               <tr>
                 <td width="150">Player 1:</td>
@@ -51,12 +72,35 @@
               </tr>
             </table>
           </td>
-          <td></td>
           <td>
-            <table width="320">
+            <table width="400">
               <tr>
-                <td width="150">Team:</td>
+                <td width="150">State:</td>
                 <td id="blue-state">-</td>
+              </tr>
+              <tr>
+                <td>----</td>
+                <td>----</td>
+              </tr>
+              <tr>
+                <td width="150">Closest:</td>
+                <td id="blue-closest">-</td>
+              </tr>
+              <tr>
+                <td width="150">Controlling:</td>
+                <td id="blue-controlling">-</td>
+              </tr>
+              <tr>
+                <td width="150">Supporting:</td>
+                <td id="blue-supporting">-</td>
+              </tr>
+              <tr>
+                <td width="150">Receiving:</td>
+                <td id="blue-receiving">-</td>
+              </tr>
+              <tr>
+                <td>----</td>
+                <td>----</td>
               </tr>
               <tr>
                 <td width="150">Player 1:</td>

@@ -1,6 +1,5 @@
 import PlayerBase from "./PlayerBase";
-
-const DRAG = 0.975;
+import { DRAG, TIME_DELTA } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
@@ -35,20 +34,20 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   public timeToCoverDistance(
     from: Phaser.Math.Vector2,
     to: Phaser.Math.Vector2,
-    power: number
+    velocity: number
   ): number {
-    const delta = 1 / 60;
-    const distance = Phaser.Math.Distance.BetweenPoints(from, to);
-
-    let x = 0;
+    let position = 0;
     let time = 0;
 
-    while (power > 0.1 && x < distance) {
-      power *= DRAG;
-      x += delta * power;
-      time += delta;
+    while (
+      velocity > 0.1 &&
+      position < Phaser.Math.Distance.BetweenPoints(from, to)
+    ) {
+      velocity *= DRAG;
+      position += TIME_DELTA * velocity;
+      time += TIME_DELTA;
 
-      if (power <= 0.1) {
+      if (velocity <= 0.1) {
         time = -1;
       }
     }
@@ -57,21 +56,19 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   }
 
   public futurePosition(time: number): Phaser.Math.Vector2 {
-    const delta = 1 / 60;
-    const frames = time / (delta * 1000);
     const position = new Phaser.Math.Vector2().setFromObject(this);
     const velocity = new Phaser.Math.Vector2().setFromObject(
       this.body.velocity
     );
 
-    for (let i = 0; i < frames; i++) {
+    for (let i = 0; i < time / (TIME_DELTA * 1000); i++) {
       velocity.x *= DRAG;
       velocity.y *= DRAG;
-      position.x += delta * velocity.x;
-      position.y += delta * velocity.y;
+      position.x += TIME_DELTA * velocity.x;
+      position.y += TIME_DELTA * velocity.y;
     }
 
-    this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
+    //this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
 
     return position;
   }
