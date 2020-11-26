@@ -292,37 +292,36 @@ export default class Team extends Phaser.GameObjects.Container {
   }
 
   public calculateSupportingPos(): number {
+    const MAX_SHOT_FORCE = 400;
+    const MAX_PASS_FORCE = 300;
+    const PASS_SAFE_STRENGTH = 2;
+    const CAN_SHOOT_STRENGTH = 1;
+    const DISTANCE_FROM_CONTROLLLING_STRENGTH = 2;
+
     let spotBest: Spot = null;
     let scoreBest: number = 0;
 
     this.spots.forEach((spot: Spot) => {
       spot.score = 1;
 
-      let canPass = false;
-      const MAX_PASS_FORCE = 300;
-
-      //Test 1. is it possible to make a safe pass from the ball's position
-      //to this position?
-      //const canPassScore = this.isPassSafeFromAllOpponents(
-      //  contoller,
-      //  spot,
-      //  MAX_PASS_FORCE
-      //);
-
-      if (canPass) {
-        // this.controllingPlayer;
-
-        spot.score += spot.canPassScore;
+      if (
+        this.isPassSafeFromAllOpponents(
+          new Phaser.Math.Vector2().setFromObject(this.controllingPlayer),
+          spot,
+          null,
+          MAX_PASS_FORCE
+        )
+      ) {
+        spot.score += PASS_SAFE_STRENGTH;
       }
 
-      let canShoot = false;
+      const canShoot = this.canShoot(spot, MAX_SHOT_FORCE);
 
-      if (canShoot) {
-        spot.score += spot.canShootScore;
+      if (canShoot[0]) {
+        spot.score += CAN_SHOOT_STRENGTH;
       }
-      //
 
-      if (this.controllingPlayer) {
+      if (this.supportingPlayer) {
         const controllingPlayerPos = new Phaser.Math.Vector2().setFromObject(
           this.controllingPlayer
         );
@@ -334,9 +333,9 @@ export default class Team extends Phaser.GameObjects.Container {
         const normal = Math.abs(OPTIMAL_DISTANCE - distance);
 
         if (normal < OPTIMAL_DISTANCE) {
-          // Normalize the distance and add it to the score
           spot.score +=
-            (spot.distanceScore * (OPTIMAL_DISTANCE - normal)) /
+            (DISTANCE_FROM_CONTROLLLING_STRENGTH *
+              (OPTIMAL_DISTANCE - normal)) /
             OPTIMAL_DISTANCE;
         }
       }

@@ -12,16 +12,4 @@ export default class Spot extends Phaser.Math.Vector2 {
   public get score(): number {
     return this._score;
   }
-
-  public get canPassScore(): number {
-    return 2;
-  }
-
-  public get canShootScore(): number {
-    return 2;
-  }
-
-  public get distanceScore(): number {
-    return 2;
-  }
 }
