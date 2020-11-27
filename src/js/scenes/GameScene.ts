@@ -33,11 +33,30 @@ export default class GameScene extends Phaser.Scene {
 
     this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
     this.goalA = new Goal(this, BORDER, height / 2, 1);
-    this.goalB = new Goal(this, width - BORDER, height / 2, -1).setFlipX(true);
+    this.goalB = new Goal(this, width - BORDER, height / 2, -1);
     this.teamA = new Team(this, 1, true, this.goalB, redRegions).setDepth(2);
     this.teamB = new Team(this, 2, false, this.goalA, blueRegions).setDepth(2);
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
+
+    this.physics.add.collider(
+      [this.ball, ...this.teamA.players, ...this.teamB.players],
+      this.goalA
+    );
+    this.physics.add.collider(
+      [this.ball, ...this.teamA.players, ...this.teamB.players],
+      this.goalB
+    );
+    this.physics.add.collider([...this.teamA.players], [...this.teamB.players]);
+    this.physics.add.collider([...this.teamA.players], [...this.teamA.players]);
+    this.physics.add.collider([...this.teamB.players], [...this.teamB.players]);
+    this.physics.add.overlap(
+      this.ball,
+      [this.goalA.goal, this.goalB.goal],
+      function (ball: Ball, goal: Phaser.GameObjects.Image) {
+        console.log("Goooooal!");
+      }
+    );
 
     this.physics.world.setBounds(
       BORDER,

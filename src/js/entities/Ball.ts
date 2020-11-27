@@ -13,6 +13,8 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.body.setDrag(DRAG, DRAG);
     this.body.useDamping = true;
 
+    this.setSize(24, 24);
+    this.setCircle(12);
     this.setData({ scored: 0 });
     this.kick(Math.PI * 1.2, 200);
   }
@@ -71,5 +73,9 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     //this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
 
     return position;
+  }
+
+  public get position(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2().setFromObject(this);
   }
 }
