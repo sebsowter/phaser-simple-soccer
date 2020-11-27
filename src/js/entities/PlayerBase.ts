@@ -436,7 +436,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get isBallWithinKickingRange(): boolean {
-    return this.position.distance(this.scene.ball.position) < 10;
+    return this.position.distance(this.scene.ball.position) < 16;
   }
 
   public get isInHotPosition(): boolean {
