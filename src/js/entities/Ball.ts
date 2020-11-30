@@ -13,15 +13,21 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.body.setDrag(DRAG, DRAG);
     this.body.useDamping = true;
 
-    this.setSize(24, 24);
-    this.setCircle(12);
-    this.setData({ scored: 0 });
-    this.kick(Math.PI * 1.2, 200);
-  }
+    this.setSize(8, 8);
+    this.setCircle(4);
 
-  public kick(angle: number, power: number): void {
-    this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
-    this.futurePosition(750);
+    console.log(
+      Phaser.Math.Angle.BetweenPoints(
+        new Phaser.Math.Vector2(300, 100),
+        new Phaser.Math.Vector2(0, 300)
+      )
+    );
+
+    console.log(
+      new Phaser.Math.Vector2(300, 100)
+        .divide(new Phaser.Math.Vector2(0, 300))
+        .angle()
+    );
   }
 
   public trap(player: PlayerBase): void {
@@ -33,23 +39,27 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setVelocity(0, 0);
   }
 
-  public timeToCoverDistance(
-    from: Phaser.Math.Vector2,
-    to: Phaser.Math.Vector2,
-    velocity: number
-  ): number {
+  /**
+   * Kick the ball.
+   */
+  public kick(angle: number, power: number): void {
+    this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
+  }
+
+  /**
+   * The amount of time the ball will take to travel a given distance, in seconds.
+   * Return -1 if the ball is unable to reach the distance.
+   */
+  public timeToCoverDistance(distance: number, speed: number): number {
     let position = 0;
     let time = 0;
 
-    while (
-      velocity > 0.1 &&
-      position < Phaser.Math.Distance.BetweenPoints(from, to)
-    ) {
-      velocity *= DRAG;
-      position += TIME_DELTA * velocity;
+    while (speed > 0.1 && position < distance) {
+      speed *= DRAG;
+      position += TIME_DELTA * speed;
       time += TIME_DELTA;
 
-      if (velocity <= 0.1) {
+      if (speed <= 0.1) {
         time = -1;
       }
     }
@@ -57,11 +67,12 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     return time;
   }
 
+  /**
+   * Get the ball future position based on current velocity and direction.
+   */
   public futurePosition(time: number): Phaser.Math.Vector2 {
-    const position = new Phaser.Math.Vector2().setFromObject(this);
-    const velocity = new Phaser.Math.Vector2().setFromObject(
-      this.body.velocity
-    );
+    const position = this.position.clone();
+    const velocity = this.body.velocity.clone();
 
     for (let i = 0; i < time / (TIME_DELTA * 1000); i++) {
       velocity.x *= DRAG;
@@ -70,11 +81,12 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
       position.y += TIME_DELTA * velocity.y;
     }
 
-    //this.scene.add.circle(position.x, position.y, 8, 0xff9900).setDepth(2);
-
     return position;
   }
 
+  /**
+   * Get the ball position.
+   */
   public get position(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2().setFromObject(this);
   }

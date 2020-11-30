@@ -7,6 +7,9 @@ export default class GameScene extends Phaser.Scene {
   public teamB: Team;
   public goalA: Goal;
   public goalB: Goal;
+  public pitch: Phaser.Geom.Rectangle;
+  public spot: any;
+  public spot2: any;
 
   constructor() {
     super({
@@ -31,6 +34,7 @@ export default class GameScene extends Phaser.Scene {
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
 
+    this.pitch = new Phaser.Geom.Rectangle(BORDER, BORDER, 6 * 192, 3 * 192);
     this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
     this.goalA = new Goal(this, BORDER, height / 2, 1);
     this.goalB = new Goal(this, width - BORDER, height / 2, -1);
@@ -39,17 +43,13 @@ export default class GameScene extends Phaser.Scene {
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
+    this.physics.add.collider(this.ball, [this.goalA, this.goalB]);
     this.physics.add.collider(
-      [this.ball, ...this.teamA.players, ...this.teamB.players],
-      this.goalA
+      [this.teamA, this.teamB],
+      [this.goalA, this.goalB]
     );
-    this.physics.add.collider(
-      [this.ball, ...this.teamA.players, ...this.teamB.players],
-      this.goalB
-    );
-    this.physics.add.collider([...this.teamA.players], [...this.teamB.players]);
-    this.physics.add.collider([...this.teamA.players], [...this.teamA.players]);
-    this.physics.add.collider([...this.teamB.players], [...this.teamB.players]);
+    this.physics.add.collider(this.teamA, [this.teamA, this.teamB]);
+    this.physics.add.collider(this.teamB, [this.teamA, this.teamB]);
     this.physics.add.overlap(
       this.ball,
       [this.goalA.goal, this.goalB.goal],
@@ -67,13 +67,49 @@ export default class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, width, height);
 
+    this.spot = this.add
+      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
+      .setDepth(4);
+    this.spot2 = this.add
+      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
+      .setDepth(4);
+
+    /*
+    this.spot = this.add
+      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
+      .setDepth(4);
+
+    this.ball.kick(0, 750);
+
+    const p = this.ball.futurePosition(3000);
+
+    this.spot.x = p.x;
+    this.spot.y = p.y;
+
+    const c = new Phaser.Math.Vector2(490, 0);
+
+    const pred = this.ball.timeToCoverDistance(
+      new Phaser.Math.Vector2(),
+      c,
+      750
+    );
+
+    this.add
+      .circle(this.ball.x + c.x, this.ball.y - 20, 8, 0x00ffff)
+      .setDepth(4);
+    console.log("pred", pred);
     //this.test();
+    */
   }
 
   public update(): void {
     switch (this.gameOn) {
       case false:
-        if (this.teamA.allPlayersHome && this.teamB.allPlayersHome) {
+        if (
+          !this.gameOn &&
+          this.teamA.isAllPlayersHome &&
+          this.teamB.isAllPlayersHome
+        ) {
           this.gameOn = true;
         }
         break;

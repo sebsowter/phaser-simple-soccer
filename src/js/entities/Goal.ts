@@ -8,42 +8,62 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
 
     this.facing = new Phaser.Math.Vector2(facing, 0);
     this.goal = this.scene.add
-      .image(x - facing * 28, y, "goal")
+      .image(x - facing * 32, y, "goal")
       .setFlipX(facing < 0)
       .setDepth(8);
 
-    const top = this.scene.add.rectangle(
-      x - facing * 30,
-      y - 64,
+    const top = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      x - facing * 34,
+      y - 60,
       60,
-      4,
-      0xffffff
+      8
     );
-    const back = this.scene.add.rectangle(x - facing * 60, y, 4, 132, 0xffffff);
-    const bottom = this.scene.add.rectangle(
-      x - facing * 30,
-      y + 64,
+    const back = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      x - facing * 60,
+      y,
+      8,
+      128
+    );
+    const bottom = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      x - facing * 34,
+      y + 60,
       60,
+      8
+    );
+    const bottomPost = new Phaser.GameObjects.Ellipse(
+      this.scene,
+      x - facing * 4,
+      y + 60,
       4,
-      0xffffff
+      4
+    );
+    const topPost = new Phaser.GameObjects.Ellipse(
+      this.scene,
+      x - facing * 4,
+      y - 60,
+      4,
+      4
     );
 
     this.scene.add.existing(this);
-    this.scene.physics.world.enable(top);
-    this.scene.physics.world.enable(back);
-    this.scene.physics.world.enable(bottom);
-
-    const b = bottom.body as Phaser.Physics.Arcade.Body;
-    b.setImmovable(true);
-    const j = back.body as Phaser.Physics.Arcade.Body;
-    j.setImmovable(true);
-    const t = top.body as Phaser.Physics.Arcade.Body;
-    t.setImmovable(true);
+    this.scene.physics.world.enable(back, Phaser.Physics.Arcade.STATIC_BODY);
+    this.scene.physics.world.enable(top, Phaser.Physics.Arcade.STATIC_BODY);
+    this.scene.physics.world.enable(topPost, Phaser.Physics.Arcade.STATIC_BODY);
+    this.scene.physics.world.enable(bottom, Phaser.Physics.Arcade.STATIC_BODY);
+    this.scene.physics.world.enable(
+      bottomPost,
+      Phaser.Physics.Arcade.STATIC_BODY
+    );
 
     this.add(this.goal);
     this.add(back);
     this.add(top);
+    this.add(topPost);
     this.add(bottom);
+    this.add(bottomPost);
   }
 
   public get width(): number {
@@ -51,7 +71,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
   }
 
   public get height(): number {
-    return this.goal.height;
+    return this.goal.height - 2 * 8;
   }
 
   public get position(): Phaser.Math.Vector2 {
