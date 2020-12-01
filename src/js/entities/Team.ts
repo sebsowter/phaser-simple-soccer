@@ -168,7 +168,7 @@ export default class Team extends Phaser.GameObjects.Group {
       return null;
     }
 
-    const interceptRange = receiver.getData("speed") * TIME_DELTA_MILI * time;
+    const interceptRange = receiver.speedPerSecond * time;
     const receiverAngle = Phaser.Math.Angle.BetweenPoints(
       position,
       receiver.position
@@ -242,8 +242,6 @@ export default class Team extends Phaser.GameObjects.Group {
   }
 
   public requestPass(player: PlayerBase): void {
-    console.log("Request pass");
-
     if (
       this.isPassSafeFromAllOpponents(
         this.controllingPlayer.position,
@@ -252,13 +250,13 @@ export default class Team extends Phaser.GameObjects.Group {
         MAX_PASS_POWER
       )
     ) {
-      this.controllingPlayer.passToMe(player);
+      this.controllingPlayer.passToRequester(player);
     }
   }
 
   public requestSupport(): void {
     // console.log("Request support");
-
+    /*
     const supportingPlayer = this.calculateSupportingPlayer();
 
     if (
@@ -273,21 +271,11 @@ export default class Team extends Phaser.GameObjects.Group {
       this.supportingPlayer.support();
     }
 
-    this.players.forEach((player: PlayerBase) => {
-      if (this.supportingPlayer === player) {
-        this.supportingPlayer.setTint(0xffff00);
-      } else if (player.state === 6) {
-        this.supportingPlayer.setTint(0xffffff);
-        player.setState(5);
-      } else {
-        this.supportingPlayer.setTint(0xffffff);
-      }
-    });
-
     setText(
       `#${this.isLeft ? "red" : "blue"}-supporting`,
       `Player ${this.supportingPlayer.getData("index") + 1}`
     );
+    */
   }
 
   public setHomeRegions(state: number): void {
@@ -359,7 +347,6 @@ export default class Team extends Phaser.GameObjects.Group {
     power: number
   ): boolean {
     const passAngle = Phaser.Math.Angle.BetweenPoints(from, to);
-    //const opponentPos = new Phaser.Math.Vector2().setFromObject(opponent);
     const opponentAngle = Phaser.Math.Angle.BetweenPoints(
       from,
       opponent.position
@@ -370,9 +357,6 @@ export default class Team extends Phaser.GameObjects.Group {
       opponentDist * Math.sin(opponentAngle - passAngle)
     );
 
-    //receiver.setTint(0xff6600);
-    //opponent.setTint(0x00ffff);
-
     if (opponentLocal.x < 0) {
       return true;
     }
@@ -381,6 +365,8 @@ export default class Team extends Phaser.GameObjects.Group {
       if (receiver) {
         if (opponent.position.distance(to) > receiver.position.distance(to)) {
           return true;
+        } else {
+          return false;
         }
       } else {
         return true;
@@ -389,8 +375,7 @@ export default class Team extends Phaser.GameObjects.Group {
 
     if (
       Math.abs(opponentLocal.y) <
-      opponent.getData("speed") *
-        TIME_DELTA_MILI *
+      opponent.speedPerSecond *
         this.ball.timeToCoverDistance(opponentLocal.x, power)
     ) {
       return false;

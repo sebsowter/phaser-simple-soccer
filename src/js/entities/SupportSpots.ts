@@ -1,5 +1,4 @@
-import Spot from "./Spot";
-import Team from "./Team";
+import { Spot, Team } from "./";
 import { MAX_SHOT_POWER, MAX_PASS_POWER } from "../constants";
 
 export default class SupportSpots {
@@ -44,9 +43,6 @@ export default class SupportSpots {
     const PASS_SAFE_STRENGTH = 2;
     const CAN_SHOOT_STRENGTH = 1;
     const DISTANCE_FROM_CONTROLLLING_STRENGTH = 2;
-    const controllingPos = new Phaser.Math.Vector2().setFromObject(
-      this.team.controllingPlayer
-    );
 
     let bestSpot: Spot = null;
     let bestScore: number = 0;
@@ -56,7 +52,7 @@ export default class SupportSpots {
 
       if (
         this.team.isPassSafeFromAllOpponents(
-          controllingPos,
+          this.team.controllingPlayer.position,
           spot,
           null,
           MAX_PASS_POWER
@@ -71,7 +67,7 @@ export default class SupportSpots {
 
       if (this.team.supportingPlayer) {
         const OPTIMAL_DISTANCE = 200;
-        const distance = controllingPos.distance(spot);
+        const distance = this.team.controllingPlayer.position.distance(spot);
         const normal = Math.abs(OPTIMAL_DISTANCE - distance);
 
         if (normal < OPTIMAL_DISTANCE) {

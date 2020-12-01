@@ -15,19 +15,6 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
 
     this.setSize(8, 8);
     this.setCircle(4);
-
-    console.log(
-      Phaser.Math.Angle.BetweenPoints(
-        new Phaser.Math.Vector2(300, 100),
-        new Phaser.Math.Vector2(0, 300)
-      )
-    );
-
-    console.log(
-      new Phaser.Math.Vector2(300, 100)
-        .divide(new Phaser.Math.Vector2(0, 300))
-        .angle()
-    );
   }
 
   public trap(player: PlayerBase): void {

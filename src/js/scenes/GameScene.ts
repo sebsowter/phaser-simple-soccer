@@ -10,6 +10,7 @@ export default class GameScene extends Phaser.Scene {
   public pitch: Phaser.Geom.Rectangle;
   public spot: any;
   public spot2: any;
+  public spot3: any;
 
   constructor() {
     super({
@@ -48,14 +49,29 @@ export default class GameScene extends Phaser.Scene {
       [this.teamA, this.teamB],
       [this.goalA, this.goalB]
     );
-    this.physics.add.collider(this.teamA, [this.teamA, this.teamB]);
-    this.physics.add.collider(this.teamB, [this.teamA, this.teamB]);
+    this.physics.add.collider(this.teamA, this.teamB);
+    this.physics.add.collider(this.teamB, this.teamA);
     this.physics.add.overlap(
       this.ball,
       [this.goalA.goal, this.goalB.goal],
       function (ball: Ball, goal: Phaser.GameObjects.Image) {
         console.log("Goooooal!");
       }
+    );
+
+    this.add.existing(
+      new Phaser.GameObjects.BitmapText(
+        this,
+        width / 2,
+        12,
+        "font3x5",
+        "0-0",
+        null,
+        Phaser.GameObjects.BitmapText.ALIGN_CENTER
+      )
+        .setOrigin(1 / 16, 0)
+        .setScale(8)
+        .setDepth(10)
     );
 
     this.physics.world.setBounds(
@@ -72,6 +88,9 @@ export default class GameScene extends Phaser.Scene {
       .setDepth(4);
     this.spot2 = this.add
       .circle(this.ball.x, this.ball.y, 8, 0xff9900)
+      .setDepth(4);
+    this.spot3 = this.add
+      .circle(this.ball.x, this.ball.y, 8, 0x00ff00)
       .setDepth(4);
 
     /*

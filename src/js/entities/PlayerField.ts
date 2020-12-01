@@ -14,9 +14,9 @@ import {
   PLAYER_COMFORT_DISTANCE,
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
-  TIME_DELTA_MILI,
 } from "../constants";
 import Info from "./Info";
+import { PlayerBase } from "./";
 
 enum States {
   Wait = 0,
@@ -34,7 +34,7 @@ enum Modes {
   Pursuit = 2,
 }
 
-export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
+export default class PlayerField extends PlayerBase {
   public scene: GameScene;
   public body: Phaser.Physics.Arcade.Body;
   public team: Team;
@@ -53,7 +53,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     home: Vector2,
     team: Team
   ) {
-    super(scene, x, y, "sprites", frame);
+    super(scene, x, y, frame, props, index, name, home, team);
 
     this.home = home;
     this.team = team;
@@ -121,7 +121,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         } else {
           this.setData({ isReadyForNextKick: false });
           this.scene.time.delayedCall(
-            250,
+            1000,
             function () {
               this.setData({ isReadyForNextKick: true });
             },
@@ -150,6 +150,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public preUpdate(time: number, delta: number): void {
+    const [speed] = this.getData(["speed"]);
+    const { ball } = this.scene;
     const ERROR_MARGIN = Math.PI / 16;
 
     this.movePlayer(delta);
@@ -158,14 +160,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case States.KickBall:
         //console.log("-----------------------");
         const dot = this.facing.dot(
-          this.scene.ball.position.clone().subtract(this.position).normalize()
+          ball.position.clone().subtract(this.position).normalize()
         );
         const powerShot = MAX_SHOT_POWER * dot;
         const powerPass = MAX_PASS_POWER * dot;
-        const canShoot = this.team.canShoot(
-          this.scene.ball.position,
-          powerShot
-        );
+        const canShoot = this.team.canShoot(ball.position, powerShot);
         const canPass = this.team.findPass(this, powerPass, MIN_PASS_DISTANCE);
 
         this.team.setControllingPlayer(this);
@@ -180,30 +179,25 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           // console.log("Shoooooooooooot!");
           //const randomAngle =
           //shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-          this.scene.ball.kick(
-            Angle.BetweenPoints(this.position, canShoot[1]),
-            powerShot
-          );
+          ball.kick(Angle.BetweenPoints(this.position, canShoot[1]), powerShot);
           this.team.requestSupport();
           this.setState(States.Wait);
         } else if (this.isThreatened && canPass[0]) {
           //console.log("dot", dot);
           //console.log("power", power);
-          //console.log("Pass", dot);
+          // console.log("Pass");
           const receiver = canPass[1];
           const targetPos = canPass[2];
           const targeAngle = Phaser.Math.Angle.BetweenPoints(
             this.position,
             targetPos
           );
-          this.scene.spot3.x = targetPos.x;
-          this.scene.spot3.x = targetPos.y;
           //this.scene.spot.x = targetPos.x;
           //this.scene.spot.y = targetPos.y;
           //const passAngle =
           //ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
 
-          this.scene.ball.kick(targeAngle, powerPass);
+          ball.kick(targeAngle, powerPass);
           receiver.receivePass(targetPos);
 
           this.team.requestSupport();
@@ -224,15 +218,12 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
             this.facing.y * facing.x - this.facing.x * facing.y
           );
 
-          this.scene.ball.kick(
-            this.rotation + direction * (Math.PI / 5),
-            DRIBBLE_POWER
-          );
+          ball.kick(this.rotation + direction * (Math.PI / 5), DRIBBLE_POWER);
         }
 
         // Otherwise kick ball towards the goal.
         else {
-          this.scene.ball.kick(
+          ball.kick(
             Angle.BetweenPoints(this.position, this.team.goal.position),
             DRIBBLE_POWER_GOAL
           );
@@ -254,7 +245,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           }
 
           // If shot from current positon possible, request a pass.
-          if (this.team.canShoot(this.position, MAX_SHOT_POWER)[0]) {
+          if (this.team.canShoot(this.position, MAX_SHOT_POWER)) {
             this.team.requestPass(this);
           }
 
@@ -310,11 +301,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
           if (this.scene.gameOn) {
             // If team is attacking and there is no controlling player request a pass?
-            if (
-              this.team.isInControl &&
-              !this.isControllingPlayer &&
-              this.isAheadOfAttacker
-            ) {
+            if (this.shouldRequestPass) {
               this.team.requestPass(this);
             }
 
@@ -410,7 +397,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       MAX_PASS_POWER
     );
 
-    console.log("passToRequester");
     receiver.receivePass(receiver.position);
 
     this.setState(States.Wait);
@@ -453,7 +439,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return position.subtract(this.position).dot(this.facing) > 0;
   }
 
-  public isCloseToHome(epsilon: number = 10): boolean {
+  public isCloseToHome(epsilon: number = 100): boolean {
     return this.position.fuzzyEquals(this.home, epsilon);
   }
 
@@ -467,6 +453,22 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       !this.team.receivingPlayer &&
       !this.scene.goalkeeperHasBall
     );
+  }
+
+  public get shouldRequestPass(): boolean {
+    return (
+      this.team.isInControl &&
+      !this.isControllingPlayer &&
+      this.isAheadOfAttacker
+    );
+  }
+
+  public get canPassForward(): boolean {
+    return false;
+  }
+
+  public get canPassBackward(): boolean {
+    return false;
   }
 
   public get isAtHome(): boolean {
@@ -494,31 +496,21 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  // Is this player closer to the opposing goal than he controlling player
   public get isAheadOfAttacker(): boolean {
     return (
-      Math.abs(this.position.x - this.team.goal.position.x) <
-      Math.abs(
-        this.team.controllingPlayer.position.x - this.team.goal.position.x
-      )
+      this.position.x - this.team.goal.position.x <
+      this.team.controllingPlayer.position.x - this.team.goal.position.x
     );
   }
 
-  // Is this player the closest player to the ball.
   public get isClosestPlayerToBall(): boolean {
     return this === this.team.closestPlayer;
   }
 
-  // Is this player the controlling player.
   public get isControllingPlayer(): boolean {
     return this === this.team.controllingPlayer;
   }
 
-  public get speedPerSecond(): number {
-    return this.getData("speed") * TIME_DELTA_MILI;
-  }
-
-  // Is this player ready for another kick.
   public get isReadyForNextKick(): boolean {
     return this.getData("isReadyForNextKick");
   }
@@ -535,12 +527,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return false;
   }
 
-  // The position of the player.
   public get isBallWithinReceivingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < RECEIVING_RANGE;
   }
 
-  // The position of the player.
   public get isBallWithinKickingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < KICKING_RANGE;
   }
@@ -557,7 +547,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return new Phaser.Math.Vector2().setFromObject(this);
   }
 
-  // The direction the player is facing, as a vector.
+  //The direction the player is facing, as a vector.
   public get facing(): Vector2 {
     return new Vector2(1, 0).setAngle(this.rotation);
   }
