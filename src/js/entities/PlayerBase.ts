@@ -19,19 +19,19 @@ import {
 import Info from "./Info";
 
 enum States {
-  Wait = 0,
-  ReceiveBall = 1,
-  KickBall = 2,
-  Dribble = 3,
-  ChaseBall = 4,
-  ReturnToHome = 5,
-  SupportAttacker = 6,
+  Wait,
+  ReceiveBall,
+  KickBall,
+  Dribble,
+  ChaseBall,
+  ReturnToHome,
+  SupportAttacker,
 }
 
 enum Modes {
-  Track = 0,
-  Seek = 1,
-  Pursuit = 2,
+  Track,
+  Seek,
+  Pursuit,
 }
 
 export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
@@ -113,8 +113,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         break;
       case States.KickBall:
         setText(selector, "KickBall");
-        this.setVelocity(0, 0);
         this.team.setControllingPlayer(this);
+        this.setVelocity(0, 0);
 
         if (!this.isReadyForNextKick) {
           this.setState(States.ChaseBall);
@@ -150,25 +150,13 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public preUpdate(time: number, delta: number): void {
-    const ERROR_MARGIN = Math.PI / 16;
-
     this.movePlayer(delta);
 
     switch (this.state) {
       case States.KickBall:
-        //console.log("-----------------------");
         const dot = this.facing.dot(
           this.scene.ball.position.clone().subtract(this.position).normalize()
         );
-        const powerShot = MAX_SHOT_POWER * dot;
-        const powerPass = MAX_PASS_POWER * dot;
-        const canShoot = this.team.canShoot(
-          this.scene.ball.position,
-          powerShot
-        );
-        const canPass = this.team.findPass(this, powerPass, MIN_PASS_DISTANCE);
-
-        this.team.setControllingPlayer(this);
 
         if (
           this.team.receivingPlayer ||
@@ -176,42 +164,49 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           dot < 0
         ) {
           this.setState(States.ChaseBall);
-        } else if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
-          // console.log("Shoooooooooooot!");
-          //const randomAngle =
-          //shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-          this.scene.ball.kick(
-            Angle.BetweenPoints(this.position, canShoot[1]),
+        } else {
+          const powerShot = MAX_SHOT_POWER * dot;
+          const canShoot = this.team.canShoot(
+            this.scene.ball.position,
             powerShot
           );
-          this.team.requestSupport();
-          this.setState(States.Wait);
-        } else if (this.isThreatened && canPass[0]) {
-          //console.log("dot", dot);
-          //console.log("power", power);
-          //console.log("Pass", dot);
-          const receiver = canPass[1];
-          const targetPos = canPass[2];
-          const targeAngle = Phaser.Math.Angle.BetweenPoints(
-            this.position,
-            targetPos
-          );
-          this.scene.spot3.x = targetPos.x;
-          this.scene.spot3.x = targetPos.y;
-          //this.scene.spot.x = targetPos.x;
-          //this.scene.spot.y = targetPos.y;
-          //const passAngle =
-          //ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
 
-          this.scene.ball.kick(targeAngle, powerPass);
-          receiver.receivePass(targetPos);
+          if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
+            // console.log("Shoooooooooooot!");
+            this.scene.ball.kick(
+              Angle.BetweenPoints(this.position, canShoot[1]),
+              powerShot
+            );
+            this.team.requestSupport();
+            this.setState(States.Wait);
+          } else {
+            const powerPass = MAX_PASS_POWER * dot;
+            const canPass = this.team.findPass(
+              this,
+              powerPass,
+              MIN_PASS_DISTANCE
+            );
 
-          this.team.requestSupport();
-          this.setState(States.Wait);
-        } else {
-          // console.log("Dribble");
-          this.setState(States.Dribble);
-          this.team.requestSupport();
+            if (this.isThreatened && canPass[0]) {
+              const receiver = canPass[1];
+              const targetPos = canPass[2];
+              const targeAngle = Phaser.Math.Angle.BetweenPoints(
+                this.position,
+                targetPos
+              );
+
+              //this.scene.spot3.x = targetPos.x;
+              //this.scene.spot3.x = targetPos.y;
+
+              this.scene.ball.kick(targeAngle, powerPass);
+              receiver.receivePass(targetPos);
+              this.setState(States.Wait);
+              this.team.requestSupport();
+            } else {
+              this.team.requestSupport();
+              this.setState(States.Dribble);
+            }
+          }
         }
         break;
       case States.Dribble:
@@ -242,7 +237,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         break;
       case States.SupportAttacker:
         if (!this.team.isInControl) {
-          this.team.setSupportingPlayer(null);
           this.setState(States.ReturnToHome);
         } else {
           // If the best supporting spot changes, change the steering target.
@@ -287,6 +281,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       case States.ReturnToHome:
+        console.log("States.ReturnToHome");
         if (this.scene.gameOn) {
           if (this.shouldChaseBall) {
             this.setState(States.ChaseBall);
@@ -299,27 +294,19 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         }
         break;
       case States.Wait:
-        // If not at target move towards it.
         if (!this.isAtTarget) {
           this.setMode(Modes.Seek);
-        }
-
-        // Otherwise stop and look at the ball.
-        else {
+        } else {
           this.setMode(Modes.Track);
 
           if (this.scene.gameOn) {
-            // If team is attacking and there is no controlling player request a pass?
             if (
               this.team.isInControl &&
               !this.isControllingPlayer &&
               this.isAheadOfAttacker
             ) {
               this.team.requestPass(this);
-            }
-
-            // Otherwise, if closest player to ball chase it.
-            else if (this.shouldChaseBall) {
+            } else if (this.shouldChaseBall) {
               this.setState(States.ChaseBall);
             }
           }
@@ -333,16 +320,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public exitState(): void {
     switch (this.state) {
       case States.ReceiveBall:
-        this.team.setReceivingPlayer(null);
+        this.team.receivingPlayer = null;
         break;
       case States.SupportAttacker:
-        this.team.setSupportingPlayer(null);
-        break;
-      case States.ChaseBall:
-      case States.Dribble:
-      case States.KickBall:
-      case States.ReturnToHome:
-      case States.Wait:
+        this.team.supportingPlayer = null;
         break;
     }
   }
@@ -410,10 +391,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       MAX_PASS_POWER
     );
 
-    console.log("passToRequester");
-    receiver.receivePass(receiver.position);
-
     this.setState(States.Wait);
+
+    receiver.receivePass(receiver.position);
 
     this.team.requestSupport();
   }
@@ -427,12 +407,13 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public support(): void {
-    //this.setState(States.SupportAttacker);
+    console.log("Support");
+    this.setState(States.SupportAttacker);
   }
 
   public receivePass(target: Vector2): void {
-    this.team.setReceivingPlayer(this);
     this.team.setControllingPlayer(this);
+    this.team.setReceivingPlayer(this);
 
     this.setTarget(target);
 
@@ -518,9 +499,17 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this.getData("speed") * TIME_DELTA_MILI;
   }
 
+  public get speedPerFrame(): number {
+    return this.getData("speed");
+  }
+
   // Is this player ready for another kick.
   public get isReadyForNextKick(): boolean {
     return this.getData("isReadyForNextKick");
+  }
+
+  public get role(): string {
+    return this.getData("role");
   }
 
   public get isBallWithinPlayerRange(): boolean {

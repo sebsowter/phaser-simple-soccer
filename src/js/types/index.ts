@@ -1,7 +1,7 @@
 export interface PlayerProps {
   id: number;
   name: string;
-  position: string;
+  role: string;
   speed: number;
   strength: number;
   power: number;

@@ -37,15 +37,15 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       this.scene,
       x - facing * 4,
       y + 60,
-      4,
-      4
+      8,
+      8
     );
     const topPost = new Phaser.GameObjects.Ellipse(
       this.scene,
       x - facing * 4,
       y - 60,
-      4,
-      4
+      8,
+      8
     );
 
     this.scene.add.existing(this);
@@ -64,6 +64,9 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     this.add(topPost);
     this.add(bottom);
     this.add(bottomPost);
+
+    //bottomPost.body.setBounce(1, 1);
+    //bottomPost.body.setBounce(1, 1);
   }
 
   public get width(): number {

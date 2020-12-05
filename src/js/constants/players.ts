@@ -4,7 +4,7 @@ const players: PlayerProps[] = [
   {
     id: 1,
     name: "Player",
-    position: "GK",
+    role: "GK",
     speed: 5,
     strength: 1,
     power: 1,
@@ -14,7 +14,7 @@ const players: PlayerProps[] = [
   {
     id: 2,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -24,7 +24,7 @@ const players: PlayerProps[] = [
   {
     id: 3,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -34,7 +34,7 @@ const players: PlayerProps[] = [
   {
     id: 4,
     name: "Player",
-    position: "CM",
+    role: "AT",
     speed: 5,
     strength: 1,
     power: 1,
@@ -44,7 +44,7 @@ const players: PlayerProps[] = [
   {
     id: 5,
     name: "Player",
-    position: "CM",
+    role: "AT",
     speed: 5,
     strength: 1,
     power: 1,
@@ -54,7 +54,7 @@ const players: PlayerProps[] = [
   {
     id: 6,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -64,7 +64,7 @@ const players: PlayerProps[] = [
   {
     id: 7,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -74,7 +74,7 @@ const players: PlayerProps[] = [
   {
     id: 8,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -84,7 +84,7 @@ const players: PlayerProps[] = [
   {
     id: 9,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,
@@ -94,7 +94,7 @@ const players: PlayerProps[] = [
   {
     id: 10,
     name: "Player",
-    position: "CM",
+    role: "CM",
     speed: 5,
     strength: 1,
     power: 1,

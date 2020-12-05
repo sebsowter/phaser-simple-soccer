@@ -14,6 +14,7 @@ import {
   PLAYER_COMFORT_DISTANCE,
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
+  TIME_DELTA_MILI,
 } from "../constants";
 import Info from "./Info";
 import { PlayerBase } from "./";
@@ -113,15 +114,15 @@ export default class PlayerField extends PlayerBase {
         break;
       case States.KickBall:
         setText(selector, "KickBall");
-        this.setVelocity(0, 0);
         this.team.setControllingPlayer(this);
+        this.setVelocity(0, 0);
 
         if (!this.isReadyForNextKick) {
           this.setState(States.ChaseBall);
         } else {
           this.setData({ isReadyForNextKick: false });
           this.scene.time.delayedCall(
-            1000,
+            250,
             function () {
               this.setData({ isReadyForNextKick: true });
             },
@@ -150,24 +151,13 @@ export default class PlayerField extends PlayerBase {
   }
 
   public preUpdate(time: number, delta: number): void {
-    const [speed] = this.getData(["speed"]);
-    const { ball } = this.scene;
-    const ERROR_MARGIN = Math.PI / 16;
-
     this.movePlayer(delta);
 
     switch (this.state) {
       case States.KickBall:
-        //console.log("-----------------------");
         const dot = this.facing.dot(
-          ball.position.clone().subtract(this.position).normalize()
+          this.scene.ball.position.clone().subtract(this.position).normalize()
         );
-        const powerShot = MAX_SHOT_POWER * dot;
-        const powerPass = MAX_PASS_POWER * dot;
-        const canShoot = this.team.canShoot(ball.position, powerShot);
-        const canPass = this.team.findPass(this, powerPass, MIN_PASS_DISTANCE);
-
-        this.team.setControllingPlayer(this);
 
         if (
           this.team.receivingPlayer ||
@@ -175,37 +165,50 @@ export default class PlayerField extends PlayerBase {
           dot < 0
         ) {
           this.setState(States.ChaseBall);
-        } else if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
-          // console.log("Shoooooooooooot!");
-          //const randomAngle =
-          //shootAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-          ball.kick(Angle.BetweenPoints(this.position, canShoot[1]), powerShot);
-          this.team.requestSupport();
-          this.setState(States.Wait);
-        } else if (this.isThreatened && canPass[0]) {
-          //console.log("dot", dot);
-          //console.log("power", power);
-          // console.log("Pass");
-          const receiver = canPass[1];
-          const targetPos = canPass[2];
-          const targeAngle = Phaser.Math.Angle.BetweenPoints(
-            this.position,
-            targetPos
-          );
-          //this.scene.spot.x = targetPos.x;
-          //this.scene.spot.y = targetPos.y;
-          //const passAngle =
-          //ballAngle - ERROR_MARGIN / 2 + Math.random() * ERROR_MARGIN;
-
-          ball.kick(targeAngle, powerPass);
-          receiver.receivePass(targetPos);
-
-          this.team.requestSupport();
-          this.setState(States.Wait);
         } else {
-          // console.log("Dribble");
-          this.setState(States.Dribble);
-          this.team.requestSupport();
+          const powerShot = MAX_SHOT_POWER * dot;
+          const canShoot = this.team.canShoot(
+            this.scene.ball.position,
+            powerShot
+          );
+
+          if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
+            // console.log("Shoooooooooooot!");
+            this.scene.ball.kick(
+              Angle.BetweenPoints(this.position, canShoot[1]),
+              powerShot
+            );
+            this.team.requestSupport();
+            this.setState(States.Wait);
+          } else {
+            const powerPass = MAX_PASS_POWER * dot;
+            const canPass = this.team.findPass(
+              this,
+              powerPass,
+              MIN_PASS_DISTANCE
+            );
+
+            if (this.isThreatened && canPass[0]) {
+              const receiver = canPass[1];
+              const targetPos = canPass[2];
+              const targeAngle = Phaser.Math.Angle.BetweenPoints(
+                this.position,
+                targetPos
+              );
+
+              //this.scene.spot3.x = targetPos.x;
+              //this.scene.spot3.x = targetPos.y;
+
+              receiver.receivePass(targetPos);
+
+              this.scene.ball.kick(targeAngle, powerPass);
+              this.team.requestSupport();
+              this.setState(States.Wait);
+            } else {
+              this.setState(States.Dribble);
+              this.team.requestSupport();
+            }
+          }
         }
         break;
       case States.Dribble:
@@ -218,12 +221,15 @@ export default class PlayerField extends PlayerBase {
             this.facing.y * facing.x - this.facing.x * facing.y
           );
 
-          ball.kick(this.rotation + direction * (Math.PI / 5), DRIBBLE_POWER);
+          this.scene.ball.kick(
+            this.rotation + direction * (Math.PI / 5),
+            DRIBBLE_POWER
+          );
         }
 
         // Otherwise kick ball towards the goal.
         else {
-          ball.kick(
+          this.scene.ball.kick(
             Angle.BetweenPoints(this.position, this.team.goal.position),
             DRIBBLE_POWER_GOAL
           );
@@ -233,7 +239,6 @@ export default class PlayerField extends PlayerBase {
         break;
       case States.SupportAttacker:
         if (!this.team.isInControl) {
-          this.team.setSupportingPlayer(null);
           this.setState(States.ReturnToHome);
         } else {
           // If the best supporting spot changes, change the steering target.
@@ -245,7 +250,7 @@ export default class PlayerField extends PlayerBase {
           }
 
           // If shot from current positon possible, request a pass.
-          if (this.team.canShoot(this.position, MAX_SHOT_POWER)) {
+          if (this.team.canShoot(this.position, MAX_SHOT_POWER)[0]) {
             this.team.requestPass(this);
           }
 
@@ -290,23 +295,19 @@ export default class PlayerField extends PlayerBase {
         }
         break;
       case States.Wait:
-        // If not at target move towards it.
         if (!this.isAtTarget) {
           this.setMode(Modes.Seek);
-        }
-
-        // Otherwise stop and look at the ball.
-        else {
+        } else {
           this.setMode(Modes.Track);
 
           if (this.scene.gameOn) {
-            // If team is attacking and there is no controlling player request a pass?
-            if (this.shouldRequestPass) {
+            if (
+              this.team.isInControl &&
+              !this.isControllingPlayer &&
+              this.isAheadOfAttacker
+            ) {
               this.team.requestPass(this);
-            }
-
-            // Otherwise, if closest player to ball chase it.
-            else if (this.shouldChaseBall) {
+            } else if (this.shouldChaseBall) {
               this.setState(States.ChaseBall);
             }
           }
@@ -324,12 +325,6 @@ export default class PlayerField extends PlayerBase {
         break;
       case States.SupportAttacker:
         this.team.setSupportingPlayer(null);
-        break;
-      case States.ChaseBall:
-      case States.Dribble:
-      case States.KickBall:
-      case States.ReturnToHome:
-      case States.Wait:
         break;
     }
   }
@@ -397,9 +392,9 @@ export default class PlayerField extends PlayerBase {
       MAX_PASS_POWER
     );
 
-    receiver.receivePass(receiver.position);
-
     this.setState(States.Wait);
+
+    receiver.receivePass(receiver.position);
 
     this.team.requestSupport();
   }
@@ -413,7 +408,7 @@ export default class PlayerField extends PlayerBase {
   }
 
   public support(): void {
-    //this.setState(States.SupportAttacker);
+    this.setState(States.SupportAttacker);
   }
 
   public receivePass(target: Vector2): void {
@@ -439,7 +434,7 @@ export default class PlayerField extends PlayerBase {
     return position.subtract(this.position).dot(this.facing) > 0;
   }
 
-  public isCloseToHome(epsilon: number = 100): boolean {
+  public isCloseToHome(epsilon: number = 10): boolean {
     return this.position.fuzzyEquals(this.home, epsilon);
   }
 
@@ -453,22 +448,6 @@ export default class PlayerField extends PlayerBase {
       !this.team.receivingPlayer &&
       !this.scene.goalkeeperHasBall
     );
-  }
-
-  public get shouldRequestPass(): boolean {
-    return (
-      this.team.isInControl &&
-      !this.isControllingPlayer &&
-      this.isAheadOfAttacker
-    );
-  }
-
-  public get canPassForward(): boolean {
-    return false;
-  }
-
-  public get canPassBackward(): boolean {
-    return false;
   }
 
   public get isAtHome(): boolean {
@@ -496,23 +475,41 @@ export default class PlayerField extends PlayerBase {
     return false;
   }
 
+  // Is this player closer to the opposing goal than he controlling player
   public get isAheadOfAttacker(): boolean {
     return (
-      this.position.x - this.team.goal.position.x <
-      this.team.controllingPlayer.position.x - this.team.goal.position.x
+      Math.abs(this.position.x - this.team.goal.position.x) <
+      Math.abs(
+        this.team.controllingPlayer.position.x - this.team.goal.position.x
+      )
     );
   }
 
+  // Is this player the closest player to the ball.
   public get isClosestPlayerToBall(): boolean {
     return this === this.team.closestPlayer;
   }
 
+  // Is this player the controlling player.
   public get isControllingPlayer(): boolean {
     return this === this.team.controllingPlayer;
   }
 
+  public get speedPerSecond(): number {
+    return this.getData("speed") * TIME_DELTA_MILI;
+  }
+
+  public get speedPerFrame(): number {
+    return this.getData("speed");
+  }
+
+  // Is this player ready for another kick.
   public get isReadyForNextKick(): boolean {
     return this.getData("isReadyForNextKick");
+  }
+
+  public get role(): string {
+    return this.getData("role");
   }
 
   public get isBallWithinPlayerRange(): boolean {
@@ -527,10 +524,12 @@ export default class PlayerField extends PlayerBase {
     return false;
   }
 
+  // The position of the player.
   public get isBallWithinReceivingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < RECEIVING_RANGE;
   }
 
+  // The position of the player.
   public get isBallWithinKickingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < KICKING_RANGE;
   }
@@ -547,7 +546,7 @@ export default class PlayerField extends PlayerBase {
     return new Phaser.Math.Vector2().setFromObject(this);
   }
 
-  //The direction the player is facing, as a vector.
+  // The direction the player is facing, as a vector.
   public get facing(): Vector2 {
     return new Vector2(1, 0).setAngle(this.rotation);
   }

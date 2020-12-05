@@ -9,8 +9,8 @@ export default class GameScene extends Phaser.Scene {
   public goalB: Goal;
   public pitch: Phaser.Geom.Rectangle;
   public spot: any;
-  public spot2: any;
-  public spot3: any;
+  //public spot2: any;
+  //public spot3: any;
 
   constructor() {
     super({
@@ -84,14 +84,12 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, width, height);
 
     this.spot = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
+      .circle(this.ball.x, this.ball.y, 12, 0xffff00)
       .setDepth(4);
-    this.spot2 = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
-      .setDepth(4);
-    this.spot3 = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0x00ff00)
-      .setDepth(4);
+
+    const v1 = new Phaser.Math.Vector2(600, 0);
+    const v2 = v1.clone().setAngle(Math.PI / 4);
+    console.log("====", v2);
 
     /*
     this.spot = this.add

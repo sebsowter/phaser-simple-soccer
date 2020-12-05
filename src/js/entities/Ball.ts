@@ -1,20 +1,23 @@
 import PlayerBase from "./PlayerBase";
-import { DRAG, TIME_DELTA } from "../constants";
+import { DRAG, TIME_DELTA, TIME_DELTA_MILI } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
+    const RADIUS = 4;
+
     super(scene, x, y, "sprites", 0);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
+    this.body.setBounce(0.5, 0.5);
     this.body.setDrag(DRAG, DRAG);
     this.body.useDamping = true;
 
-    this.setSize(8, 8);
-    this.setCircle(4);
+    this.setSize(RADIUS * 2, RADIUS * 2);
+    this.setCircle(RADIUS);
   }
 
   public trap(player: PlayerBase): void {
@@ -61,7 +64,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
 
-    for (let i = 0; i < time / (TIME_DELTA * 1000); i++) {
+    for (let i = 0; i < time / TIME_DELTA_MILI; i++) {
       velocity.x *= DRAG;
       velocity.y *= DRAG;
       position.x += TIME_DELTA * velocity.x;
