@@ -113,7 +113,7 @@ export default class SupportSpots {
     return this.bestSpot;
   }
 
-  public getSupportSpot(): Spot {
+  public get supportSpot(): Spot {
     return this.bestSpot ? this.bestSpot : this.calculateSupportSpot();
   }
 }

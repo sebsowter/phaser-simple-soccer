@@ -317,9 +317,9 @@ export default class Team extends Phaser.GameObjects.Group {
 
     this.players.forEach((player: PlayerBase) => {
       if (player.role === "AT" && !player.isControllingPlayer) {
-        const distance = player.position.distance(this.spots.getSupportSpot());
+        const distance = player.position.distance(this.spots.supportSpot);
 
-        if (distance < Math.sqrt(closest)) {
+        if (distance < closest) {
           closest = distance;
           bestPlayer = player;
         }
@@ -469,7 +469,7 @@ export default class Team extends Phaser.GameObjects.Group {
   }
 
   public getSupportSpot(): Spot {
-    return this.spots.getSupportSpot();
+    return this.spots.supportSpot;
   }
 
   public get isInControl(): boolean {

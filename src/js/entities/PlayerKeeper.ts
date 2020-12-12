@@ -61,7 +61,7 @@ export default class PlayerKeeper extends PlayerBase {
     switch (value) {
       case States.TendGoal:
         setText(selector, "TendGoal");
-        this.setMode(Modes.Seek);
+        this.setMode(Modes.Interpose);
         this.setTarget(this.getRearInterposeTarget);
         break;
       case States.ReturnToHome:
@@ -92,6 +92,7 @@ export default class PlayerKeeper extends PlayerBase {
         //console.log("TendGoal");
         //console.log("this.TendGoal", this.getRearInterposeTarget);
         this.setTarget(this.getRearInterposeTarget);
+
         const spot =
           this.getData("name") === "red" ? this.scene.spot1 : this.scene.spot2;
         spot.x = this.target.x;
@@ -111,7 +112,7 @@ export default class PlayerKeeper extends PlayerBase {
         }
         break;
       case States.ReturnToHome:
-        if (this.isAtHome || !this.team.isInControl) {
+        if (this.isAtHome || (!this.team.isInControl && this.scene.gameOn)) {
           this.setState(States.TendGoal);
         }
         break;
@@ -132,9 +133,11 @@ export default class PlayerKeeper extends PlayerBase {
 
           this.scene.ball.kick(targetAngle, MAX_PASS_POWER);
           this.scene.setGoalkeeperHasBall(false);
-          receiver.receivePass(targetPos);
+
           this.setMode(Modes.Track);
           this.setState(States.TendGoal);
+
+          receiver.receivePass(targetPos);
         }
         break;
       case States.InterceptBall:
@@ -152,16 +155,15 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public receivePass(target: Phaser.Math.Vector2): void {
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    this.setState(States.InterceptBall);
+  }
+
+  public get isAtHome(): boolean {
+    return this.inHomeRegion();
   }
 
   public get isBallWithinKeeperRange(): boolean {
     return this.position.distance(this.scene.ball.position) < KEEPER_RANGE;
-  }
-
-  // Is this player ready for another kick.
-  public get isAtHome(): boolean {
-    return true;
   }
 
   public get isBallWithinRangeForIntercept(): boolean {
@@ -174,8 +176,7 @@ export default class PlayerKeeper extends PlayerBase {
 
   public get isTooFarFromGoalMouth(): boolean {
     return (
-      //this.position.distance(this.getRearInterposeTarget) > INTERCEPT_RANGE
-      this.position.distance(this.team.opponents.goal.position) > 200
+      this.position.distance(this.getRearInterposeTarget) > INTERCEPT_RANGE
     );
   }
 }
