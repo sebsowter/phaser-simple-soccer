@@ -3,6 +3,8 @@ import { getRegionPos, setText } from "../utils";
 import { PlayerProps, TeamProps } from "../types";
 import { GameScene } from "../scenes";
 import { SupportSpots, Spot, PlayerBase, Goal, Ball } from "./";
+import PlayerField from "./PlayerField";
+import PlayerKeeper from "./PlayerKeeper";
 
 enum States {
   PrepareForKickOff = 0,
@@ -45,17 +47,30 @@ export default class Team extends Phaser.GameObjects.Group {
     );
 
     this.players = players.map((props: PlayerProps, index: number) => {
-      const player = new PlayerBase(
-        this.scene,
-        Phaser.Math.Between(64, 1280 - 64),
-        Phaser.Math.Between(64, 704 - 64),
-        team.frame,
-        props,
-        index,
-        team.name,
-        getRegionPos(this.regions.defending[index]),
-        this
-      );
+      const player =
+        props.role === "GK"
+          ? new PlayerKeeper(
+              this.scene,
+              Phaser.Math.Between(64, 1280 - 64),
+              Phaser.Math.Between(64, 704 - 64),
+              team.frame,
+              props,
+              index,
+              team.name,
+              getRegionPos(this.regions.defending[index]),
+              this
+            )
+          : new PlayerField(
+              this.scene,
+              Phaser.Math.Between(64, 1280 - 64),
+              Phaser.Math.Between(64, 704 - 64),
+              team.frame,
+              props,
+              index,
+              team.name,
+              getRegionPos(this.regions.defending[index]),
+              this
+            );
 
       this.add(player);
 
@@ -139,6 +154,14 @@ export default class Team extends Phaser.GameObjects.Group {
     }
 
     return this;
+  }
+
+  public sendFieldPlayersToHome(): void {
+    this.players.forEach((player: PlayerField) => {
+      if (player.role !== "GK") {
+        player.returnHome();
+      }
+    });
   }
 
   public canShoot(
@@ -277,13 +300,13 @@ export default class Team extends Phaser.GameObjects.Group {
   }
 
   public updateTargetsOfWaitingPlayers(): void {
-    this.players.forEach((player: PlayerBase) => {
+    this.players.forEach((player: PlayerField) => {
       player.returnHomeIfWaiting(player.home);
     });
   }
 
   public returnAllToHome(): void {
-    this.players.forEach((player: PlayerBase) => {
+    this.players.forEach((player: PlayerField) => {
       player.returnHome();
     });
   }
@@ -459,5 +482,12 @@ export default class Team extends Phaser.GameObjects.Group {
 
   public get ball(): Ball {
     return this.scene.ball;
+  }
+
+  public get closestPlayerOnPitchToBall(): PlayerBase {
+    return this.closestPlayer.position.distance(this.ball.position) <
+      this.opponents.closestPlayer.position.distance(this.ball.position)
+      ? this.closestPlayer
+      : this.opponents.closestPlayer;
   }
 }

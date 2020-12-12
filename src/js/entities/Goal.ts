@@ -78,6 +78,9 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
   }
 
   public get position(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2().setFromObject(this.goal);
+    return new Phaser.Math.Vector2(
+      this.goal.x + this.facing.x * 32,
+      this.goal.y
+    );
   }
 }

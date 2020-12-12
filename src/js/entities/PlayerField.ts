@@ -17,22 +17,16 @@ import {
   TIME_DELTA_MILI,
 } from "../constants";
 import Info from "./Info";
-import { PlayerBase } from "./";
+import PlayerBase, { Modes } from "./PlayerBase";
 
 enum States {
-  Wait = 0,
-  ReceiveBall = 1,
-  KickBall = 2,
-  Dribble = 3,
-  ChaseBall = 4,
-  ReturnToHome = 5,
-  SupportAttacker = 6,
-}
-
-enum Modes {
-  Track = 0,
-  Seek = 1,
-  Pursuit = 2,
+  Wait,
+  ReceiveBall,
+  KickBall,
+  Dribble,
+  ChaseBall,
+  ReturnToHome,
+  SupportAttacker,
 }
 
 export default class PlayerField extends PlayerBase {
@@ -56,39 +50,18 @@ export default class PlayerField extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
-    this.home = home;
-    this.team = team;
-    this.state = States.Wait;
-
-    this.scene.add.existing(this);
-    this.scene.physics.world.enable(this);
-
-    this.setData(props);
-    this.setData({
-      name,
-      index,
-      pursuit: false,
-      arrive: false,
-      seek: false,
-      separation: false,
-      isReadyForNextKick: true,
-      mode: Modes.Track,
-    });
-    this.setSize(16, 16);
-    this.setCircle(8);
     this.setState(States.Wait);
-    this.setDepth(3);
+  }
 
-    this.info = new Info(this.scene, index, team.isLeft);
-
-    this.scene.events.on(
-      "postupdate",
-      function () {
-        this.info.x = this.x;
-        this.info.y = this.y;
-      },
-      this
-    );
+  public exitState(): void {
+    switch (this.state) {
+      case States.ReceiveBall:
+        this.team.receivingPlayer = null;
+        break;
+      case States.SupportAttacker:
+        this.team.supportingPlayer = null;
+        break;
+    }
   }
 
   public setState(value: States): this {
@@ -199,14 +172,13 @@ export default class PlayerField extends PlayerBase {
               //this.scene.spot3.x = targetPos.x;
               //this.scene.spot3.x = targetPos.y;
 
-              receiver.receivePass(targetPos);
-
               this.scene.ball.kick(targeAngle, powerPass);
-              this.team.requestSupport();
+              receiver.receivePass(targetPos);
               this.setState(States.Wait);
-            } else {
-              this.setState(States.Dribble);
               this.team.requestSupport();
+            } else {
+              this.team.requestSupport();
+              this.setState(States.Dribble);
             }
           }
         }
@@ -283,6 +255,7 @@ export default class PlayerField extends PlayerBase {
         }
         break;
       case States.ReturnToHome:
+        //.log("States.ReturnToHome");
         if (this.scene.gameOn) {
           if (this.shouldChaseBall) {
             this.setState(States.ChaseBall);
@@ -318,57 +291,6 @@ export default class PlayerField extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
-  public exitState(): void {
-    switch (this.state) {
-      case States.ReceiveBall:
-        this.team.setReceivingPlayer(null);
-        break;
-      case States.SupportAttacker:
-        this.team.setSupportingPlayer(null);
-        break;
-    }
-  }
-
-  public movePlayer(delta: number): void {
-    const [speed, mode] = this.getData(["speed", "mode"]);
-
-    switch (mode) {
-      case Modes.Pursuit:
-        const ballSpeed = this.scene.ball.body.speed;
-        const magnitude = this.scene.ball.position
-          .clone()
-          .subtract(this.position)
-          .length();
-
-        let lookAheadTime = 0;
-
-        if (ballSpeed !== 0) {
-          lookAheadTime = magnitude / ballSpeed;
-        }
-
-        this.setTarget(this.scene.ball.futurePosition(lookAheadTime));
-      case Modes.Seek:
-        const targetAngle = Angle.BetweenPoints(this.position, this.target);
-
-        this.setRotation(targetAngle);
-        this.setVelocity(
-          speed * delta * Math.cos(targetAngle),
-          speed * delta * Math.sin(targetAngle)
-        );
-        break;
-      case Modes.Track:
-        this.setVelocity(0, 0);
-        this.setRotation(
-          Angle.BetweenPoints(this.position, this.scene.ball.position)
-        );
-        break;
-    }
-  }
-
-  public setMode(value: Modes): void {
-    this.setData({ mode: value });
-  }
-
   public returnHome(): void {
     this.setState(States.ReturnToHome);
   }
@@ -379,7 +301,7 @@ export default class PlayerField extends PlayerBase {
     }
   }
 
-  public passToRequester(receiver: PlayerBase): void {
+  public passToRequester(receiver: PlayerField): void {
     if (this.team.receivingPlayer || !this.isBallWithinKickingRange) {
       return;
     }
@@ -399,21 +321,14 @@ export default class PlayerField extends PlayerBase {
     this.team.requestSupport();
   }
 
-  public setTarget(value: Vector2): void {
-    this.target = value;
-  }
-
-  public setHome(value: Vector2): void {
-    this.home = value;
-  }
-
   public support(): void {
+    console.log("Support");
     this.setState(States.SupportAttacker);
   }
 
   public receivePass(target: Vector2): void {
-    this.team.setReceivingPlayer(this);
     this.team.setControllingPlayer(this);
+    this.team.setReceivingPlayer(this);
 
     this.setTarget(target);
 
@@ -430,18 +345,6 @@ export default class PlayerField extends PlayerBase {
     this.setState(States.ReceiveBall);
   }
 
-  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
-    return position.subtract(this.position).dot(this.facing) > 0;
-  }
-
-  public isCloseToHome(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this.home, epsilon);
-  }
-
-  public isCloseToTarget(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this.target, epsilon);
-  }
-
   public get shouldChaseBall(): boolean {
     return (
       this.isClosestPlayerToBall &&
@@ -450,12 +353,8 @@ export default class PlayerField extends PlayerBase {
     );
   }
 
-  public get isAtHome(): boolean {
-    return this.isCloseToHome();
-  }
-
-  public get isAtTarget(): boolean {
-    return this.isCloseToTarget();
+  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
+    return position.subtract(this.position).dot(this.facing) > 0;
   }
 
   public get isThreatened(): boolean {
@@ -485,43 +384,9 @@ export default class PlayerField extends PlayerBase {
     );
   }
 
-  // Is this player the closest player to the ball.
-  public get isClosestPlayerToBall(): boolean {
-    return this === this.team.closestPlayer;
-  }
-
-  // Is this player the controlling player.
-  public get isControllingPlayer(): boolean {
-    return this === this.team.controllingPlayer;
-  }
-
-  public get speedPerSecond(): number {
-    return this.getData("speed") * TIME_DELTA_MILI;
-  }
-
-  public get speedPerFrame(): number {
-    return this.getData("speed");
-  }
-
   // Is this player ready for another kick.
   public get isReadyForNextKick(): boolean {
     return this.getData("isReadyForNextKick");
-  }
-
-  public get role(): string {
-    return this.getData("role");
-  }
-
-  public get isBallWithinPlayerRange(): boolean {
-    return false;
-  }
-
-  public get isBallWithinSupportSpotRange(): boolean {
-    return false;
-  }
-
-  public get isBallWithinTargetRange(): boolean {
-    return false;
   }
 
   // The position of the player.
@@ -537,17 +402,8 @@ export default class PlayerField extends PlayerBase {
   // Is the player in the attacking third of the pich.
   public get isInHotPosition(): boolean {
     return (
-      Math.abs(this.position.y - this.team.goal.position.y) < (192 * 6) / 3
+      Math.abs(this.position.y - this.team.goal.position.y) <
+      this.scene.pitch.width / 3
     );
-  }
-
-  // The position of the player.
-  public get position(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2().setFromObject(this);
-  }
-
-  // The direction the player is facing, as a vector.
-  public get facing(): Vector2 {
-    return new Vector2(1, 0).setAngle(this.rotation);
   }
 }

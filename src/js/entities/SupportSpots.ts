@@ -8,7 +8,6 @@ export default class SupportSpots {
   public spots: Spot[];
   public bestSpot: Spot = null;
   public circles: Phaser.GameObjects.Arc[];
-  public ready: boolean = true;
 
   constructor(team: Team, isLeft: boolean, scene: GameScene) {
     const CENTER_X = 640;
@@ -68,7 +67,6 @@ export default class SupportSpots {
     let bestScore: number = 0;
 
     this.bestSpot = null;
-    this.ready = false;
 
     this.spots.forEach((spot: Spot, index: number) => {
       spot.score = 1;
@@ -109,18 +107,7 @@ export default class SupportSpots {
         bestScore = spot.score;
 
         this.bestSpot = spot;
-
-        //this.circles[index].setScale(bestScore);
       }
-
-      this.scene.time.delayedCall(
-        1000,
-        function () {
-          this.ready = true;
-        },
-        [],
-        this
-      );
     });
 
     return this.bestSpot;

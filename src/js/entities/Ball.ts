@@ -20,7 +20,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setCircle(RADIUS);
   }
 
-  public trap(player: PlayerBase): void {
+  public trap(): void {
     this.setVelocity(0, 0);
   }
 

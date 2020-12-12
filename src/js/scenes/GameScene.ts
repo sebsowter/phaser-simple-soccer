@@ -1,4 +1,4 @@
-import { Ball, Goal, Team } from "../entities";
+import { Ball, Goal, PlayerBase, Team } from "../entities";
 import { redRegions, blueRegions } from "../constants";
 
 export default class GameScene extends Phaser.Scene {
@@ -9,6 +9,8 @@ export default class GameScene extends Phaser.Scene {
   public goalB: Goal;
   public pitch: Phaser.Geom.Rectangle;
   public spot: any;
+  public spot1: any;
+  public spot2: any;
   //public spot2: any;
   //public spot3: any;
 
@@ -87,6 +89,14 @@ export default class GameScene extends Phaser.Scene {
       .circle(this.ball.x, this.ball.y, 12, 0xffff00)
       .setDepth(4);
 
+    this.spot1 = this.add
+      .circle(this.ball.x, this.ball.y, 12, 0x00ffff)
+      .setDepth(1);
+
+    this.spot2 = this.add
+      .circle(this.ball.x, this.ball.y, 12, 0x00ffff)
+      .setDepth(1);
+
     const v1 = new Phaser.Math.Vector2(600, 0);
     const v2 = v1.clone().setAngle(Math.PI / 4);
     console.log("====", v2);
@@ -131,6 +141,10 @@ export default class GameScene extends Phaser.Scene {
         }
         break;
     }
+  }
+
+  public setGoalkeeperHasBall(value: boolean) {
+    this.goalkeeperHasBall = value;
   }
 
   public set goalkeeperHasBall(value: boolean) {
