@@ -110,10 +110,33 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         );
         break;
       case Modes.Interpose:
-        const distance = this.position.distance(this.scene.ball.position);
-        const targetAngle2 = Angle.BetweenPoints(this.position, this.target);
+        const targetAn = Angle.BetweenPoints(
+          this.position,
+          this.scene.ball.position
+        );
+        //const distance = this.position.distance(this.scene.ball.position);
+        //const targetAngle2 = Angle.BetweenPoints(this.position, this.target);
+        this.setTarget(this.getRearInterposeTarget);
+        const distance2 = this.position.distance(this.target);
 
-        this.setRotation(targetAngle2);
+        //this.setRotation(targetAngle2);
+        //this.setVelocity(
+        //  speed * delta * Math.cos(targetAngle2),
+        //  speed * delta * Math.sin(targetAngle2)
+        //);
+
+        var temp1 = new Phaser.Math.Vector2(
+          this.scene.ball.position.x - this.target.x,
+          this.scene.ball.position.y - this.target.y
+        ).normalize();
+        var temp2 = new Phaser.Math.Vector2(
+          this.target.x + temp1.x * distance2,
+          this.target.y + temp1.y * distance2
+        );
+
+        const targetAngle2 = Angle.BetweenPoints(this.position, temp2);
+
+        this.setRotation(targetAn);
         this.setVelocity(
           speed * delta * Math.cos(targetAngle2),
           speed * delta * Math.sin(targetAngle2)
