@@ -14,7 +14,6 @@ import {
   PLAYER_COMFORT_DISTANCE,
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
-  TIME_DELTA_MILI,
 } from "../constants";
 import Info from "./Info";
 import PlayerBase, { Modes } from "./PlayerBase";
@@ -50,7 +49,7 @@ export default class PlayerField extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
-    this.setState(States.Wait);
+    this.setState(States.ReturnToHome);
   }
 
   public exitState(): void {
@@ -114,7 +113,6 @@ export default class PlayerField extends PlayerBase {
         this.setVelocity(0, 0);
 
         if (!this.scene.gameOn) {
-          //console.log("this.home", this.home);
           this.setTarget(this.home);
         }
         break;
@@ -322,7 +320,7 @@ export default class PlayerField extends PlayerBase {
   }
 
   public support(): void {
-    console.log("Support");
+    //console.log("Support");
     this.setState(States.SupportAttacker);
   }
 

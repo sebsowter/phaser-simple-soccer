@@ -2,19 +2,9 @@ import Team from "./Team";
 import { PlayerProps } from "../types";
 import { setText } from "../utils";
 import {
-  MAX_SHOT_POWER,
   MAX_PASS_POWER,
-  POT_SHOT_CHANCE,
-  PASS_THREAT_RADIUS,
   MIN_PASS_DISTANCE,
-  RECEIVING_RANGE,
-  KICKING_RANGE,
-  PLAYER_COMFORT_DISTANCE,
-  DRIBBLE_POWER,
-  DRIBBLE_POWER_GOAL,
-  TIME_DELTA_MILI,
   INTERCEPT_RANGE,
-  GOAL_MOUTH_DISTANCE,
   KEEPER_RANGE,
 } from "../constants";
 import PlayerBase, { Modes } from "./PlayerBase";
@@ -62,7 +52,7 @@ export default class PlayerKeeper extends PlayerBase {
       case States.TendGoal:
         setText(selector, "TendGoal");
         this.setMode(Modes.Interpose);
-        this.setTarget(this.getRearInterposeTarget);
+        this.setTarget(this.rearInterposeTarget);
         break;
       case States.ReturnToHome:
         setText(selector, "ReturnToHome");
@@ -89,9 +79,7 @@ export default class PlayerKeeper extends PlayerBase {
 
     switch (this.state) {
       case States.TendGoal:
-        //console.log("TendGoal");
-        //console.log("this.TendGoal", this.getRearInterposeTarget);
-        this.setTarget(this.getRearInterposeTarget);
+        this.setTarget(this.rearInterposeTarget);
 
         const spot =
           this.getData("name") === "red" ? this.scene.spot1 : this.scene.spot2;
@@ -112,7 +100,7 @@ export default class PlayerKeeper extends PlayerBase {
         }
         break;
       case States.ReturnToHome:
-        if (this.isAtHome || (!this.team.isInControl && this.scene.gameOn)) {
+        if (this.scene.gameOn && (this.isAtHome || !this.team.isInControl)) {
           this.setState(States.TendGoal);
         }
         break;
@@ -154,12 +142,8 @@ export default class PlayerKeeper extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
-  public receivePass(target: Phaser.Math.Vector2): void {
+  public receivePass(): void {
     this.setState(States.InterceptBall);
-  }
-
-  public get isAtHome(): boolean {
-    return this.inHomeRegion();
   }
 
   public get isBallWithinKeeperRange(): boolean {
@@ -168,15 +152,12 @@ export default class PlayerKeeper extends PlayerBase {
 
   public get isBallWithinRangeForIntercept(): boolean {
     return (
-      this.team.opponents &&
-      this.team.opponents.goal.position.distance(this.scene.ball.position) <=
-        INTERCEPT_RANGE
+      this.team.goalHome.position.distance(this.scene.ball.position) <=
+      INTERCEPT_RANGE
     );
   }
 
   public get isTooFarFromGoalMouth(): boolean {
-    return (
-      this.position.distance(this.getRearInterposeTarget) > INTERCEPT_RANGE
-    );
+    return this.position.distance(this.rearInterposeTarget) > INTERCEPT_RANGE;
   }
 }

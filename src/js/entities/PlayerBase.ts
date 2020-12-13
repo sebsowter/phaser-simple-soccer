@@ -116,7 +116,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         );
         //const distance = this.position.distance(this.scene.ball.position);
         //const targetAngle2 = Angle.BetweenPoints(this.position, this.target);
-        this.setTarget(this.getRearInterposeTarget);
+        this.setTarget(this.rearInterposeTarget);
         const distance2 = this.position.distance(this.target);
 
         //this.setRotation(targetAngle2);
@@ -261,7 +261,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   // Is this player the closest player to the ball.
-  public get getRearInterposeTarget(): Phaser.Math.Vector2 {
+  public get rearInterposeTarget(): Phaser.Math.Vector2 {
     if (this.team.opponents) {
       var x = this.team.opponents.goal.position.x;
       var y =

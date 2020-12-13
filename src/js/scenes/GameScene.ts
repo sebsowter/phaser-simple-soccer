@@ -41,8 +41,22 @@ export default class GameScene extends Phaser.Scene {
     this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
     this.goalA = new Goal(this, BORDER, height / 2, 1);
     this.goalB = new Goal(this, width - BORDER, height / 2, -1);
-    this.teamA = new Team(this, 1, true, this.goalB, redRegions).setDepth(2);
-    this.teamB = new Team(this, 2, false, this.goalA, blueRegions).setDepth(2);
+    this.teamA = new Team(
+      this,
+      1,
+      true,
+      this.goalB,
+      this.goalA,
+      redRegions
+    ).setDepth(2);
+    this.teamB = new Team(
+      this,
+      2,
+      false,
+      this.goalA,
+      this.goalB,
+      blueRegions
+    ).setDepth(2);
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
@@ -90,11 +104,11 @@ export default class GameScene extends Phaser.Scene {
       .setDepth(4);
 
     this.spot1 = this.add
-      .circle(this.ball.x, this.ball.y, 12, 0x00ffff)
+      .circle(this.ball.x, this.ball.y, 8, 0x00ffff)
       .setDepth(1);
 
     this.spot2 = this.add
-      .circle(this.ball.x, this.ball.y, 12, 0x00ffff)
+      .circle(this.ball.x, this.ball.y, 8, 0x00ffff)
       .setDepth(1);
 
     const v1 = new Phaser.Math.Vector2(600, 0);

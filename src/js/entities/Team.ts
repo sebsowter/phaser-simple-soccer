@@ -18,6 +18,7 @@ export default class Team extends Phaser.GameObjects.Group {
   public isLeft: boolean;
   public regions: any;
   public goal: Goal;
+  public goalHome: Goal;
   public state: States;
   public opponents: Team;
   public players: PlayerBase[];
@@ -31,6 +32,7 @@ export default class Team extends Phaser.GameObjects.Group {
     teamId: number,
     isLeft: boolean,
     goal: Goal,
+    goalHome: Goal,
     regions: any
   ) {
     super(scene);
@@ -38,6 +40,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this.scene.add.existing(this);
 
     this.goal = goal;
+    this.goalHome = goalHome;
     this.isLeft = isLeft;
     this.regions = regions;
 
@@ -149,7 +152,7 @@ export default class Team extends Phaser.GameObjects.Group {
         this.setHomeRegions(value);
         this.updateTargetsOfWaitingPlayers();
         //this.returnAllToHome();
-        //this.supportingPlayer = this.calculateSupportingPlayer();
+        this.setSupportingPlayer(this.calculateSupportingPlayer());
         break;
     }
 
@@ -428,7 +431,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this.controllingPlayer = player;
     this.opponents.controllingPlayer = null;
     this.setReceivingPlayer(null);
-    this.setSupportingPlayer(null);
+    //this.setSupportingPlayer(null);
   }
 
   public setReceivingPlayer(player: PlayerBase): void {
@@ -443,13 +446,6 @@ export default class Team extends Phaser.GameObjects.Group {
   public setSupportingPlayer(player: PlayerBase): void {
     setText(
       `#${this.isLeft ? "red" : "blue"}-supporting`,
-      player ? `Player ${player.getData("index") + 1}` : "-"
-    );
-
-    //if (player) console.log("setSupportingPlayer");
-
-    console.log(
-      "setSupportingPlayer",
       player ? `Player ${player.getData("index") + 1}` : "-"
     );
 
