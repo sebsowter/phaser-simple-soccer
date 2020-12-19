@@ -56,30 +56,19 @@ export default class Team extends Phaser.GameObjects.Group {
     );
 
     this.players = players.map((props: PlayerProps, index: number) => {
-      const player =
-        props.role === "GK"
-          ? new PlayerKeeper(
-              this.scene,
-              getRegionPos(this.regions.defending[index]).x,
-              getRegionPos(this.regions.defending[index]).y,
-              team.frame,
-              props,
-              index,
-              team.name,
-              getRegionPos(this.regions.defending[index]),
-              this
-            )
-          : new PlayerField(
-              this.scene,
-              getRegionPos(this.regions.defending[index]).x,
-              getRegionPos(this.regions.defending[index]).y,
-              team.frame,
-              props,
-              index,
-              team.name,
-              getRegionPos(this.regions.defending[index]),
-              this
-            );
+      const position = getRegionPos(this.regions.defending[index]);
+      const PlayerEntity = props.role === "GK" ? PlayerKeeper : PlayerField;
+      const player = new PlayerEntity(
+        this.scene,
+        position.x,
+        position.y,
+        team.frame,
+        props,
+        index,
+        team.name,
+        position,
+        this
+      );
 
       this.add(player);
 

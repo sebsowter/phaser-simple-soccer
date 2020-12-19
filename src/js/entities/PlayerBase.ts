@@ -1,4 +1,3 @@
-import { Angle, Vector2 } from "phaser/src/math";
 import GameScene from "../scenes/GameScene";
 import Team from "./Team";
 import { PlayerProps } from "../types";
@@ -17,8 +16,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public body: Phaser.Physics.Arcade.Body;
   public team: Team;
   public info: Info;
-  public home: Vector2;
-  public target: Vector2;
+  public home: Phaser.Math.Vector2;
+  public target: Phaser.Math.Vector2;
 
   constructor(
     scene: Phaser.Scene,
@@ -28,7 +27,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     props: PlayerProps,
     index: number,
     name: string,
-    home: Vector2,
+    home: Phaser.Math.Vector2,
     team: Team
   ) {
     super(scene, x, y, "sprites", frame);
@@ -81,7 +80,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
         this.setTarget(this.scene.ball.futurePosition(lookAheadTime));
       case Modes.Seek:
-        const targetAngle = Angle.BetweenPoints(this.position, this.target);
+        const targetAngle = Phaser.Math.Angle.BetweenPoints(
+          this.position,
+          this.target
+        );
 
         this.setRotation(targetAngle);
         this.setVelocity(
@@ -92,11 +94,14 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       case Modes.Track:
         this.setVelocity(0, 0);
         this.setRotation(
-          Angle.BetweenPoints(this.position, this.scene.ball.position)
+          Phaser.Math.Angle.BetweenPoints(
+            this.position,
+            this.scene.ball.position
+          )
         );
         break;
       case Modes.Interpose:
-        const targetAn = Angle.BetweenPoints(
+        const targetAn = Phaser.Math.Angle.BetweenPoints(
           this.position,
           this.scene.ball.position
         );
@@ -114,7 +119,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           this.target.y + temp1.y * distance2
         );
 
-        const targetAngle2 = Angle.BetweenPoints(this.position, temp2);
+        const targetAngle2 = Phaser.Math.Angle.BetweenPoints(
+          this.position,
+          temp2
+        );
 
         this.setRotation(targetAn);
         this.setVelocity(
@@ -131,19 +139,19 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
-  public setTarget(value: Vector2): this {
+  public setTarget(value: Phaser.Math.Vector2): this {
     this.target = value;
 
     return this;
   }
 
-  public setHome(value: Vector2): this {
+  public setHome(value: Phaser.Math.Vector2): this {
     this.home = value;
 
     return this;
   }
 
-  public returnHomeIfWaiting(target: Vector2): this {
+  public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
     return this;
   }
 
@@ -175,8 +183,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return new Phaser.Math.Vector2(this.x, this.y);
   }
 
-  public get facing(): Vector2 {
-    return new Vector2(1, 0).setAngle(this.rotation);
+  public get facing(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(1, 0).setAngle(this.rotation);
   }
 
   public get speedPerSecond(): number {

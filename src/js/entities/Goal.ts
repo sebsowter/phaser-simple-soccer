@@ -7,6 +7,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     super(scene);
 
     this.facing = new Phaser.Math.Vector2(facing, 0);
+
     this.goal = this.scene.add
       .image(x - facing * 32, y, "goal")
       .setFlipX(facing < 0)
@@ -64,9 +65,6 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     this.add(topPost);
     this.add(bottom);
     this.add(bottomPost);
-
-    //bottomPost.body.setBounce(1, 1);
-    //bottomPost.body.setBounce(1, 1);
   }
 
   public get width(): number {
