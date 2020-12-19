@@ -32,7 +32,12 @@ export default class GameScene extends Phaser.Scene {
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
 
-    this.pitch = new Phaser.Geom.Rectangle(BORDER, BORDER, 6 * 192, 3 * 192);
+    this.pitch = new Phaser.Geom.Rectangle(
+      BORDER,
+      BORDER,
+      width - BORDER * 2,
+      height - BORDER * 2
+    );
     this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
     this.goalA = new Goal(this, BORDER, height / 2, 1);
     this.goalB = new Goal(this, width - BORDER, height / 2, -1);

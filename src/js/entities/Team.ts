@@ -1,10 +1,16 @@
-import { MAX_PASS_POWER, Players, Teams, TIME_DELTA_MILI } from "../constants";
+import { MAX_PASS_POWER, Players, Teams } from "../constants";
 import { getRegionPos, setText } from "../utils";
 import { PlayerProps, TeamProps } from "../types";
 import { GameScene } from "../scenes";
-import { SupportSpots, Spot, PlayerBase, Goal, Ball } from "./";
-import PlayerField from "./PlayerField";
-import PlayerKeeper from "./PlayerKeeper";
+import {
+  SupportSpots,
+  Spot,
+  PlayerBase,
+  PlayerField,
+  PlayerKeeper,
+  Goal,
+  Ball,
+} from "./";
 
 enum States {
   PrepareForKickOff = 0,
@@ -54,8 +60,8 @@ export default class Team extends Phaser.GameObjects.Group {
         props.role === "GK"
           ? new PlayerKeeper(
               this.scene,
-              Phaser.Math.Between(64, 1280 - 64),
-              Phaser.Math.Between(64, 704 - 64),
+              getRegionPos(this.regions.defending[index]).x,
+              getRegionPos(this.regions.defending[index]).y,
               team.frame,
               props,
               index,
@@ -65,8 +71,8 @@ export default class Team extends Phaser.GameObjects.Group {
             )
           : new PlayerField(
               this.scene,
-              Phaser.Math.Between(64, 1280 - 64),
-              Phaser.Math.Between(64, 704 - 64),
+              getRegionPos(this.regions.defending[index]).x,
+              getRegionPos(this.regions.defending[index]).y,
               team.frame,
               props,
               index,
@@ -125,18 +131,15 @@ export default class Team extends Phaser.GameObjects.Group {
         this.controllingPlayer = null;
         this.setReceivingPlayer(null);
         this.setSupportingPlayer(null);
-        this.setHomeRegions(value);
-        this.updateTargetsOfWaitingPlayers(value);
+        this.updateTargets(value);
         break;
       case States.Defending:
         setText(selector, "Defending");
-        this.setHomeRegions(value);
-        this.updateTargetsOfWaitingPlayers(value);
+        this.updateTargets(value);
         break;
       case States.Attacking:
         setText(selector, "Attacking");
-        this.setHomeRegions(value);
-        this.updateTargetsOfWaitingPlayers(value);
+        this.updateTargets(value);
         this.setSupportingPlayer(this.calculateSupportingPlayer());
         break;
     }
@@ -152,16 +155,7 @@ export default class Team extends Phaser.GameObjects.Group {
     });
   }
 
-  public setHomeRegions(state: number): void {
-    const { defending, attacking } = this.regions;
-    const region = state === States.Attacking ? attacking : defending;
-
-    this.players.forEach((player: PlayerBase, index: number) => {
-      player.setHome(getRegionPos(region[index]));
-    });
-  }
-
-  public updateTargetsOfWaitingPlayers(state: number): void {
+  public updateTargets(state: number): void {
     const { defending, attacking } = this.regions;
     const region = state === States.Attacking ? attacking : defending;
 

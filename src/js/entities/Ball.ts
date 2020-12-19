@@ -19,23 +19,19 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setCircle(RADIUS);
   }
 
-  // Kick the ball.
   public kick(angle: number, power: number): void {
     this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
   }
 
-  // Place the ball.
   public place(x: number, y: number): void {
     this.setVelocity(0, 0);
     this.setPosition(x, y);
   }
 
-  // Trap the ball.
   public trap(): void {
     this.setVelocity(0, 0);
   }
 
-  // The amount of time the ball will take to travel a given distance.
   public timeToCoverDistance(distance: number, speed: number): number {
     let position = 0;
     let time = 0;
@@ -53,7 +49,6 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     return time;
   }
 
-  // Future position in time.
   public futurePosition(time: number): Phaser.Math.Vector2 {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
@@ -68,7 +63,6 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     return position;
   }
 
-  // Current position.
   public get position(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2(this.x, this.y);
   }

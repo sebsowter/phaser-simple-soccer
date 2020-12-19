@@ -204,18 +204,14 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get rearInterposeTarget(): Phaser.Math.Vector2 {
-    if (this.team.opponents) {
-      var x = this.team.opponents.goal.position.x;
-      var y =
-        this.scene.pitch.height / 2 +
-        64 -
-        this.team.opponents.goal.height / 2 +
-        this.team.opponents.goal.height *
-          ((this.scene.ball.position.y - 64) / this.scene.pitch.height);
+    var x = this.team.goalHome.position.x;
+    var y =
+      this.scene.pitch.height / 2 +
+      64 -
+      this.team.goalHome.height / 2 +
+      this.team.goalHome.height *
+        ((this.scene.ball.position.y - 64) / this.scene.pitch.height);
 
-      return new Phaser.Math.Vector2(x, y);
-    }
-
-    return new Phaser.Math.Vector2();
+    return new Phaser.Math.Vector2(x, y);
   }
 }

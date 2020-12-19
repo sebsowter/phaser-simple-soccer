@@ -17,6 +17,7 @@ export default class LoaderScene extends Phaser.Scene {
       },
       this
     );
+
     this.game.events.on(
       Phaser.Core.Events.FOCUS,
       function () {
