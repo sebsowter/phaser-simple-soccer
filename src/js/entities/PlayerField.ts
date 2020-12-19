@@ -1,4 +1,3 @@
-import { Angle, Vector2 } from "phaser/src/math";
 import GameScene from "../scenes/GameScene";
 import Team from "./Team";
 import { PlayerProps } from "../types";
@@ -33,8 +32,8 @@ export default class PlayerField extends PlayerBase {
   public body: Phaser.Physics.Arcade.Body;
   public team: Team;
   public info: Info;
-  public home: Vector2;
-  public target: Vector2;
+  public home: Phaser.Math.Vector2;
+  public target: Phaser.Math.Vector2;
 
   constructor(
     scene: Phaser.Scene,
@@ -44,7 +43,7 @@ export default class PlayerField extends PlayerBase {
     props: PlayerProps,
     index: number,
     name: string,
-    home: Vector2,
+    home: Phaser.Math.Vector2,
     team: Team
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
@@ -52,7 +51,9 @@ export default class PlayerField extends PlayerBase {
     this.setState(States.ReturnToHome);
   }
 
-  public exitState(): void {
+  public setState(value: States): this {
+    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
+
     switch (this.state) {
       case States.ReceiveBall:
         this.team.receivingPlayer = null;
@@ -61,12 +62,6 @@ export default class PlayerField extends PlayerBase {
         this.team.supportingPlayer = null;
         break;
     }
-  }
-
-  public setState(value: States): this {
-    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
-
-    this.exitState();
 
     switch (value) {
       case States.ChaseBall:
@@ -88,7 +83,6 @@ export default class PlayerField extends PlayerBase {
         setText(selector, "KickBall");
         this.team.setControllingPlayer(this);
         this.setVelocity(0, 0);
-
         if (!this.isReadyForNextKick) {
           this.setState(States.ChaseBall);
         } else {
@@ -111,7 +105,6 @@ export default class PlayerField extends PlayerBase {
       case States.Wait:
         setText(selector, "Wait");
         this.setVelocity(0, 0);
-
         if (!this.scene.gameOn) {
           this.setTarget(this.home);
         }
@@ -144,9 +137,8 @@ export default class PlayerField extends PlayerBase {
           );
 
           if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
-            // console.log("Shoooooooooooot!");
             this.scene.ball.kick(
-              Angle.BetweenPoints(this.position, canShoot[1]),
+              Phaser.Math.Angle.BetweenPoints(this.position, canShoot[1]),
               powerShot
             );
             this.team.requestSupport();
@@ -167,16 +159,13 @@ export default class PlayerField extends PlayerBase {
                 targetPos
               );
 
-              //this.scene.spot3.x = targetPos.x;
-              //this.scene.spot3.x = targetPos.y;
-
               this.scene.ball.kick(targeAngle, powerPass);
               receiver.receivePass(targetPos);
               this.setState(States.Wait);
               this.team.requestSupport();
             } else {
-              this.team.requestSupport();
               this.setState(States.Dribble);
+              this.team.requestSupport();
             }
           }
         }
@@ -200,7 +189,10 @@ export default class PlayerField extends PlayerBase {
         // Otherwise kick ball towards the goal.
         else {
           this.scene.ball.kick(
-            Angle.BetweenPoints(this.position, this.team.goal.position),
+            Phaser.Math.Angle.BetweenPoints(
+              this.position,
+              this.team.goal.position
+            ),
             DRIBBLE_POWER_GOAL
           );
         }
@@ -224,8 +216,6 @@ export default class PlayerField extends PlayerBase {
             this.team.requestPass(this);
           }
 
-          // If this player is located at the support spot and his team still
-          // has possession, he should remain still and turn to face the ball.
           if (this.isAtTarget) {
             this.setMode(Modes.Track);
 
@@ -253,7 +243,6 @@ export default class PlayerField extends PlayerBase {
         }
         break;
       case States.ReturnToHome:
-        //.log("States.ReturnToHome");
         if (this.scene.gameOn) {
           if (this.shouldChaseBall) {
             this.setState(States.ChaseBall);
@@ -289,17 +278,15 @@ export default class PlayerField extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
-  public returnHome(): void {
-    this.setState(States.ReturnToHome);
-  }
-
-  public returnHomeIfWaiting(target: Vector2): void {
+  public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
     if (this.state === States.Wait || this.state === States.ReturnToHome) {
       this.setTarget(target);
     }
+
+    return this;
   }
 
-  public passToRequester(receiver: PlayerField): void {
+  public passToRequester(receiver: PlayerField): this {
     if (this.team.receivingPlayer || !this.isBallWithinKickingRange) {
       return;
     }
@@ -311,20 +298,26 @@ export default class PlayerField extends PlayerBase {
       ),
       MAX_PASS_POWER
     );
-
     this.setState(States.Wait);
-
     receiver.receivePass(receiver.position);
-
     this.team.requestSupport();
+
+    return this;
   }
 
-  public support(): void {
-    //console.log("Support");
+  public returnHome(): this {
+    this.setState(States.ReturnToHome);
+
+    return this;
+  }
+
+  public support(): this {
     this.setState(States.SupportAttacker);
+
+    return this;
   }
 
-  public receivePass(target: Vector2): void {
+  public receivePass(target: Phaser.Math.Vector2): this {
     this.team.setControllingPlayer(this);
     this.team.setReceivingPlayer(this);
 
@@ -341,6 +334,12 @@ export default class PlayerField extends PlayerBase {
     }
 
     this.setState(States.ReceiveBall);
+
+    return this;
+  }
+
+  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
+    return position.subtract(this.position).dot(this.facing) > 0;
   }
 
   public get shouldChaseBall(): boolean {
@@ -349,10 +348,6 @@ export default class PlayerField extends PlayerBase {
       !this.team.receivingPlayer &&
       !this.scene.goalkeeperHasBall
     );
-  }
-
-  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
-    return position.subtract(this.position).dot(this.facing) > 0;
   }
 
   public get isThreatened(): boolean {
@@ -372,7 +367,6 @@ export default class PlayerField extends PlayerBase {
     return false;
   }
 
-  // Is this player closer to the opposing goal than he controlling player
   public get isAheadOfAttacker(): boolean {
     return (
       Math.abs(this.position.x - this.team.goal.position.x) <
@@ -382,26 +376,26 @@ export default class PlayerField extends PlayerBase {
     );
   }
 
-  // Is this player ready for another kick.
   public get isReadyForNextKick(): boolean {
     return this.getData("isReadyForNextKick");
   }
 
-  // The position of the player.
   public get isBallWithinReceivingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < RECEIVING_RANGE;
   }
 
-  // The position of the player.
   public get isBallWithinKickingRange(): boolean {
     return this.position.distance(this.scene.ball.position) < KICKING_RANGE;
   }
 
-  // Is the player in the attacking third of the pich.
   public get isInHotPosition(): boolean {
     return (
       Math.abs(this.position.y - this.team.goal.position.y) <
       this.scene.pitch.width / 3
     );
+  }
+
+  public get isControllingPlayer(): boolean {
+    return this === this.team.controllingPlayer;
   }
 }

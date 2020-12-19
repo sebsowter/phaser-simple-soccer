@@ -1,4 +1,4 @@
-import { Ball, Goal, PlayerBase, Team } from "../entities";
+import { Ball, Goal, Team } from "../entities";
 import { redRegions, blueRegions } from "../constants";
 
 export default class GameScene extends Phaser.Scene {
@@ -8,11 +8,6 @@ export default class GameScene extends Phaser.Scene {
   public goalA: Goal;
   public goalB: Goal;
   public pitch: Phaser.Geom.Rectangle;
-  public spot: any;
-  public spot1: any;
-  public spot2: any;
-  //public spot2: any;
-  //public spot3: any;
 
   constructor() {
     super({
@@ -98,66 +93,19 @@ export default class GameScene extends Phaser.Scene {
     );
 
     this.cameras.main.setBounds(0, 0, width, height);
-
-    this.spot = this.add
-      .circle(this.ball.x, this.ball.y, 12, 0xffff00)
-      .setDepth(4);
-
-    this.spot1 = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0x00ffff)
-      .setDepth(1);
-
-    this.spot2 = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0x00ffff)
-      .setDepth(1);
-
-    const v1 = new Phaser.Math.Vector2(600, 0);
-    const v2 = v1.clone().setAngle(Math.PI / 4);
-    console.log("====", v2);
-
-    /*
-    this.spot = this.add
-      .circle(this.ball.x, this.ball.y, 8, 0xff9900)
-      .setDepth(4);
-
-    this.ball.kick(0, 750);
-
-    const p = this.ball.futurePosition(3000);
-
-    this.spot.x = p.x;
-    this.spot.y = p.y;
-
-    const c = new Phaser.Math.Vector2(490, 0);
-
-    const pred = this.ball.timeToCoverDistance(
-      new Phaser.Math.Vector2(),
-      c,
-      750
-    );
-
-    this.add
-      .circle(this.ball.x + c.x, this.ball.y - 20, 8, 0x00ffff)
-      .setDepth(4);
-    console.log("pred", pred);
-    //this.test();
-    */
   }
 
   public update(): void {
-    switch (this.gameOn) {
-      case false:
-        if (
-          !this.gameOn &&
-          this.teamA.isAllPlayersHome &&
-          this.teamB.isAllPlayersHome
-        ) {
-          this.gameOn = true;
-        }
-        break;
+    if (
+      !this.gameOn &&
+      this.teamA.isAllPlayersHome &&
+      this.teamB.isAllPlayersHome
+    ) {
+      this.gameOn = true;
     }
   }
 
-  public setGoalkeeperHasBall(value: boolean) {
+  public setGoalkeeperHasBall(value: boolean): void {
     this.goalkeeperHasBall = value;
   }
 
@@ -175,32 +123,5 @@ export default class GameScene extends Phaser.Scene {
 
   public get gameOn(): boolean {
     return this.data.get("gameOn");
-  }
-
-  private test(): void {
-    const point1 = new Phaser.GameObjects.Sprite(
-      this,
-      200,
-      352,
-      "sprites",
-      3
-    ).setDepth(4);
-    this.add.existing(point1);
-
-    const pin = -0.52;
-    const point2 = new Phaser.GameObjects.Sprite(this, 500, 352, "sprites", 4)
-      .setDepth(4)
-      .setRotation(Math.PI * pin);
-    this.add.existing(point2);
-
-    const v1 = new Phaser.Math.Vector2(1, 0);
-    const v2 = new Phaser.Math.Vector2(1, 0);
-    console.log("v1", v1);
-    console.log("v2", v2);
-    v2.rotate(Math.PI * pin);
-    //v2.setAngle(Math.PI * -0.45);
-    console.log("v2", v2);
-    const dot = v1.dot(v2);
-    console.log("dot", dot);
   }
 }

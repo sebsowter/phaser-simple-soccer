@@ -1,39 +1,37 @@
-import { Spot, Team } from "./";
 import { MAX_SHOT_POWER, MAX_PASS_POWER } from "../constants";
 import { GameScene } from "../scenes";
+import { Spot, Team } from "./";
 
 export default class SupportSpots {
-  public scene: GameScene;
   public team: Team;
   public spots: Spot[];
-  public bestSpot: Spot = null;
   public circles: Phaser.GameObjects.Arc[];
+  public _supportSpot: Spot = null;
 
-  constructor(team: Team, isLeft: boolean, scene: GameScene) {
+  constructor(scene: GameScene, team: Team, isLeft: boolean) {
     const CENTER_X = 640;
     const CENTER_Y = 352;
     const CENTER_A = 128;
-    const GAP = 80;
-    const GAPY = 80;
-    const N = 5;
-    const N2 = 6;
-    const LENGTH = (N - 1) * GAP;
-    const HEIGHT = (N2 - 1) * GAPY;
+    const GAP_X = 80;
+    const GAP_Y = 80;
+    const N_X = 5;
+    const N_Y = 6;
+    const LENGTH = (N_X - 1) * GAP_X;
+    const HEIGHT = (N_Y - 1) * GAP_Y;
 
-    this.scene = scene;
     this.team = team;
     this.spots = [];
     this.circles = [];
 
-    for (let y = 0; y < N2; y++) {
-      for (let x = 0; x < N; x++) {
+    for (let y = 0; y < N_Y; y++) {
+      for (let x = 0; x < N_X; x++) {
         const anchor = new Phaser.Math.Vector2(
           isLeft ? CENTER_X + CENTER_A : CENTER_X - LENGTH - CENTER_A,
           CENTER_Y - HEIGHT / 2
         );
         const position = new Phaser.Math.Vector2(
-          anchor.x + x * GAP,
-          anchor.y + y * GAPY
+          anchor.x + x * GAP_X,
+          anchor.y + y * GAP_Y
         );
 
         this.spots.push(new Spot(position.x, position.y));
@@ -47,7 +45,7 @@ export default class SupportSpots {
       }
     }
 
-    this.scene.time.addEvent({
+    scene.time.addEvent({
       delay: 1000,
       loop: true,
       callbackScope: this,
@@ -62,11 +60,11 @@ export default class SupportSpots {
   public calculateSupportSpot(): Spot {
     const PASS_SAFE_STRENGTH = 2;
     const CAN_SHOOT_STRENGTH = 1;
-    const DISTANCE_FROM_CONTROLLLING_STRENGTH = 2;
+    const CONTROLLLING_DISTANCE_STRENGTH = 2;
+
+    this._supportSpot = null;
 
     let bestScore: number = 0;
-
-    this.bestSpot = null;
 
     this.spots.forEach((spot: Spot, index: number) => {
       spot.score = 1;
@@ -93,10 +91,9 @@ export default class SupportSpots {
 
         if (normal < OPTIMAL_DISTANCE) {
           const score =
-            (DISTANCE_FROM_CONTROLLLING_STRENGTH *
-              (OPTIMAL_DISTANCE - normal)) /
+            (CONTROLLLING_DISTANCE_STRENGTH * (OPTIMAL_DISTANCE - normal)) /
             OPTIMAL_DISTANCE;
-          //console.log("score", score);
+
           spot.score += score;
         }
       }
@@ -106,14 +103,14 @@ export default class SupportSpots {
       if (spot.score > bestScore) {
         bestScore = spot.score;
 
-        this.bestSpot = spot;
+        this._supportSpot = spot;
       }
     });
 
-    return this.bestSpot;
+    return this._supportSpot;
   }
 
   public get supportSpot(): Spot {
-    return this.bestSpot ? this.bestSpot : this.calculateSupportSpot();
+    return this._supportSpot ? this._supportSpot : this.calculateSupportSpot();
   }
 }

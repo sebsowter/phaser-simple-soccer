@@ -1,4 +1,3 @@
-import PlayerBase from "./PlayerBase";
 import { DRAG, TIME_DELTA, TIME_DELTA_MILI } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
@@ -20,26 +19,23 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setCircle(RADIUS);
   }
 
-  public trap(): void {
-    this.setVelocity(0, 0);
-  }
-
-  public place(x: number, y: number): void {
-    this.setPosition(x, y);
-    this.setVelocity(0, 0);
-  }
-
-  /**
-   * Kick the ball.
-   */
+  // Kick the ball.
   public kick(angle: number, power: number): void {
     this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
   }
 
-  /**
-   * The amount of time the ball will take to travel a given distance, in seconds.
-   * Return -1 if the ball is unable to reach the distance.
-   */
+  // Place the ball.
+  public place(x: number, y: number): void {
+    this.setVelocity(0, 0);
+    this.setPosition(x, y);
+  }
+
+  // Trap the ball.
+  public trap(): void {
+    this.setVelocity(0, 0);
+  }
+
+  // The amount of time the ball will take to travel a given distance.
   public timeToCoverDistance(distance: number, speed: number): number {
     let position = 0;
     let time = 0;
@@ -57,9 +53,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     return time;
   }
 
-  /**
-   * Get the ball future position based on current velocity and direction.
-   */
+  // Future position in time.
   public futurePosition(time: number): Phaser.Math.Vector2 {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
@@ -74,10 +68,8 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     return position;
   }
 
-  /**
-   * Get the ball position.
-   */
+  // Current position.
   public get position(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2().setFromObject(this);
+    return new Phaser.Math.Vector2(this.x, this.y);
   }
 }

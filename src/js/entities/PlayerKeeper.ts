@@ -33,7 +33,9 @@ export default class PlayerKeeper extends PlayerBase {
     this.setState(States.ReturnToHome);
   }
 
-  private exitState(): void {
+  public setState(value: States): this {
+    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
+
     switch (this.state) {
       case States.TendGoal:
       case States.ReturnToHome:
@@ -41,12 +43,6 @@ export default class PlayerKeeper extends PlayerBase {
         this.setMode(Modes.Track);
         break;
     }
-  }
-
-  public setState(value: States): this {
-    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
-
-    this.exitState();
 
     switch (value) {
       case States.TendGoal:
@@ -80,11 +76,6 @@ export default class PlayerKeeper extends PlayerBase {
     switch (this.state) {
       case States.TendGoal:
         this.setTarget(this.rearInterposeTarget);
-
-        const spot =
-          this.getData("name") === "red" ? this.scene.spot1 : this.scene.spot2;
-        spot.x = this.target.x;
-        spot.y = this.target.y;
 
         if (this.isBallWithinKeeperRange) {
           this.scene.ball.trap();
@@ -142,8 +133,10 @@ export default class PlayerKeeper extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
-  public receivePass(): void {
+  public receivePass(): this {
     this.setState(States.InterceptBall);
+
+    return this;
   }
 
   public get isBallWithinKeeperRange(): boolean {
