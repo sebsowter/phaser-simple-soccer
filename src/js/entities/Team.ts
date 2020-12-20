@@ -80,7 +80,11 @@ export default class Team extends Phaser.GameObjects.Group {
     this.spots = new SupportSpots(this.scene, this, isLeft);
   }
 
-  public preUpdate(time: number, delta: number): void {
+  public kickOff(): void {
+    this.setState(States.PrepareForKickOff);
+  }
+
+  public preUpdate(): void {
     this.setClosestPlayer();
 
     switch (this.state) {
@@ -121,6 +125,7 @@ export default class Team extends Phaser.GameObjects.Group {
         this.setReceivingPlayer(null);
         this.setSupportingPlayer(null);
         this.updateTargets(value);
+        this.returnAllToHome();
         break;
       case States.Defending:
         setText(selector, "Defending");
@@ -136,8 +141,14 @@ export default class Team extends Phaser.GameObjects.Group {
     return this;
   }
 
+  public returnAllToHome(): void {
+    this.players.forEach((player: PlayerBase) => {
+      player.returnHome();
+    });
+  }
+
   public sendFieldPlayersToHome(): void {
-    this.players.forEach((player: PlayerField) => {
+    this.players.forEach((player: PlayerBase) => {
       if (player.role !== "GK") {
         player.returnHome();
       }

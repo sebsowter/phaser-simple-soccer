@@ -151,6 +151,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
+  public returnHome(): this {
+    return this;
+  }
+
   public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
     return this;
   }

@@ -8,6 +8,7 @@ export default class GameScene extends Phaser.Scene {
   public goalA: Goal;
   public goalB: Goal;
   public pitch: Phaser.Geom.Rectangle;
+  public scoreText: Phaser.GameObjects.BitmapText;
 
   constructor() {
     super({
@@ -69,26 +70,37 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.teamB, this.teamA);
     this.physics.add.overlap(
       this.ball,
-      [this.goalA.goal, this.goalB.goal],
-      function (ball: Ball, goal: Phaser.GameObjects.Image) {
-        console.log("Goooooal!");
-      }
+      this.goalA.target,
+      function () {
+        this.goalA.score();
+      },
+      null,
+      this
+    );
+    this.physics.add.overlap(
+      this.ball,
+      this.goalB.target,
+      function () {
+        this.goalB.score();
+      },
+      null,
+      this
     );
 
-    this.add.existing(
-      new Phaser.GameObjects.BitmapText(
-        this,
-        width / 2,
-        12,
-        "font3x5",
-        "0-0",
-        null,
-        Phaser.GameObjects.BitmapText.ALIGN_CENTER
-      )
-        .setOrigin(1 / 16, 0)
-        .setScale(8)
-        .setDepth(10)
-    );
+    this.scoreText = new Phaser.GameObjects.BitmapText(
+      this,
+      width / 2,
+      12,
+      "font3x5",
+      "0-0",
+      null,
+      Phaser.GameObjects.BitmapText.ALIGN_CENTER
+    )
+      .setOrigin(1 / 16, 0)
+      .setScale(8)
+      .setDepth(10);
+
+    this.add.existing(this.scoreText);
 
     this.physics.world.setBounds(
       BORDER,
@@ -107,6 +119,23 @@ export default class GameScene extends Phaser.Scene {
       this.teamB.isAllPlayersHome
     ) {
       this.gameOn = true;
+    }
+  }
+
+  public reset(): void {
+    if (this.gameOn) {
+      this.gameOn = false;
+      this.scoreText.setText(`${this.goalA.scored}-${this.goalB.scored}`);
+      this.teamA.kickOff();
+      this.teamB.kickOff();
+      this.time.delayedCall(
+        1000,
+        function () {
+          this.ball.place(1280 / 2, 704 / 2);
+        },
+        [],
+        this
+      );
     }
   }
 

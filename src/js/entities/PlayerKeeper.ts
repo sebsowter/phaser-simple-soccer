@@ -133,6 +133,12 @@ export default class PlayerKeeper extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
+  public returnHome(): this {
+    this.setState(States.ReturnToHome);
+
+    return this;
+  }
+
   public receivePass(): this {
     this.setState(States.InterceptBall);
 

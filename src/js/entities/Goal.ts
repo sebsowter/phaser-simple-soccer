@@ -1,9 +1,13 @@
+import { GameScene } from "../scenes";
+
 export default class GoalGroup extends Phaser.GameObjects.Group {
+  public scene: GameScene;
   public goal: Phaser.GameObjects.Image;
+  public target: Phaser.GameObjects.Rectangle;
   public facing: Phaser.Math.Vector2;
   public scored: number = 0;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, facing: number) {
+  constructor(scene: GameScene, x: number, y: number, facing: number) {
     super(scene);
 
     this.facing = new Phaser.Math.Vector2(facing, 0);
@@ -12,6 +16,18 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       .image(x - facing * 32, y, "goal")
       .setFlipX(facing < 0)
       .setDepth(8);
+
+    this.target = new Phaser.GameObjects.Rectangle(
+      this.scene,
+      x - facing * 42,
+      y,
+      64 - 20,
+      128,
+      0x00ffff,
+      0
+    ).setDepth(10);
+
+    this.scene.add.existing(this.target);
 
     const top = new Phaser.GameObjects.Rectangle(
       this.scene,
@@ -50,6 +66,10 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     );
 
     this.scene.add.existing(this);
+    this.scene.physics.world.enable(
+      this.target,
+      Phaser.Physics.Arcade.STATIC_BODY
+    );
     this.scene.physics.world.enable(back, Phaser.Physics.Arcade.STATIC_BODY);
     this.scene.physics.world.enable(top, Phaser.Physics.Arcade.STATIC_BODY);
     this.scene.physics.world.enable(topPost, Phaser.Physics.Arcade.STATIC_BODY);
@@ -59,12 +79,18 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       Phaser.Physics.Arcade.STATIC_BODY
     );
 
-    this.add(this.goal);
     this.add(back);
     this.add(top);
     this.add(topPost);
     this.add(bottom);
     this.add(bottomPost);
+  }
+
+  public score(): void {
+    if (this.scene.gameOn) {
+      this.scored++;
+      this.scene.reset();
+    }
   }
 
   public get width(): number {
