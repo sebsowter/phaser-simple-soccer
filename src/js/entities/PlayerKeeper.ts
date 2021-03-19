@@ -71,7 +71,7 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public preUpdate(time: number, delta: number): void {
-    this.movePlayer(delta);
+    super.preUpdate(time, delta);
 
     switch (this.state) {
       case States.TendGoal:
@@ -91,7 +91,7 @@ export default class PlayerKeeper extends PlayerBase {
         }
         break;
       case States.ReturnToHome:
-        if (this.scene.gameOn && (this.isAtHome || !this.team.isInControl)) {
+        if (this.isAtHome || !this.team.isInControl) {
           this.setState(States.TendGoal);
         }
         break;
@@ -129,8 +129,6 @@ export default class PlayerKeeper extends PlayerBase {
         }
         break;
     }
-
-    super.preUpdate(time, delta);
   }
 
   public returnHome(): this {
@@ -143,6 +141,10 @@ export default class PlayerKeeper extends PlayerBase {
     this.setState(States.InterceptBall);
 
     return this;
+  }
+
+  public get isAtHome(): boolean {
+    return !this.isTooFarFromGoalMouth;
   }
 
   public get isBallWithinKeeperRange(): boolean {

@@ -17,7 +17,7 @@ import {
 import Info from "./Info";
 import PlayerBase, { Modes } from "./PlayerBase";
 
-enum States {
+enum FieldPlayerStates {
   Wait,
   ReceiveBall,
   KickBall,
@@ -48,43 +48,43 @@ export default class PlayerField extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
-    this.setState(States.ReturnToHome);
+    this.setState(FieldPlayerStates.ReturnToHome);
   }
 
-  public setState(value: States): this {
+  public setState(value: FieldPlayerStates): this {
     const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
 
     switch (this.state) {
-      case States.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         this.team.receivingPlayer = null;
         break;
-      case States.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         this.team.supportingPlayer = null;
         break;
     }
 
     switch (value) {
-      case States.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         setText(selector, "ChaseBall");
         this.setMode(Modes.Pursuit);
         break;
-      case States.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         setText(selector, "ReceiveBall");
         break;
-      case States.Dribble:
+      case FieldPlayerStates.Dribble:
         setText(selector, "Dribble");
         this.team.setControllingPlayer(this);
         break;
-      case States.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         setText(selector, "SupportAttacker");
         this.setTarget(this.team.getSupportSpot());
         break;
-      case States.KickBall:
+      case FieldPlayerStates.KickBall:
         setText(selector, "KickBall");
         this.team.setControllingPlayer(this);
         this.setVelocity(0, 0);
         if (!this.isReadyForNextKick) {
-          this.setState(States.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         } else {
           this.setData({ isReadyForNextKick: false });
           this.scene.time.delayedCall(
@@ -97,12 +97,12 @@ export default class PlayerField extends PlayerBase {
           );
         }
         break;
-      case States.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         setText(selector, "ReturnToHome");
         this.setTarget(this.home);
         this.setMode(Modes.Seek);
         break;
-      case States.Wait:
+      case FieldPlayerStates.Wait:
         setText(selector, "Wait");
         this.setVelocity(0, 0);
         if (!this.scene.gameOn) {
@@ -115,10 +115,10 @@ export default class PlayerField extends PlayerBase {
   }
 
   public preUpdate(time: number, delta: number): void {
-    this.movePlayer(delta);
+    super.preUpdate(time, delta);
 
     switch (this.state) {
-      case States.KickBall:
+      case FieldPlayerStates.KickBall:
         const dot = this.facing.dot(
           this.scene.ball.position.clone().subtract(this.position).normalize()
         );
@@ -128,7 +128,7 @@ export default class PlayerField extends PlayerBase {
           this.scene.goalkeeperHasBall ||
           dot < 0
         ) {
-          this.setState(States.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         } else {
           const powerShot = MAX_SHOT_POWER * dot;
           const canShoot = this.team.canShoot(
@@ -142,7 +142,7 @@ export default class PlayerField extends PlayerBase {
               powerShot
             );
             this.team.requestSupport();
-            this.setState(States.Wait);
+            this.setState(FieldPlayerStates.Wait);
           } else {
             const powerPass = MAX_PASS_POWER * dot;
             const canPass = this.team.findPass(
@@ -161,16 +161,16 @@ export default class PlayerField extends PlayerBase {
 
               this.scene.ball.kick(targeAngle, powerPass);
               receiver.receivePass(targetPos);
-              this.setState(States.Wait);
+              this.setState(FieldPlayerStates.Wait);
               this.team.requestSupport();
             } else {
-              this.setState(States.Dribble);
+              this.setState(FieldPlayerStates.Dribble);
               this.team.requestSupport();
             }
           }
         }
         break;
-      case States.Dribble:
+      case FieldPlayerStates.Dribble:
         const { facing } = this.team.goal;
         const goalDot = facing.dot(this.facing);
 
@@ -197,11 +197,11 @@ export default class PlayerField extends PlayerBase {
           );
         }
 
-        this.setState(States.ChaseBall);
+        this.setState(FieldPlayerStates.ChaseBall);
         break;
-      case States.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         if (!this.team.isInControl) {
-          this.setState(States.ReturnToHome);
+          this.setState(FieldPlayerStates.ReturnToHome);
         } else {
           // If the best supporting spot changes, change the steering target.
           const supportSpot = this.team.getSupportSpot();
@@ -225,36 +225,36 @@ export default class PlayerField extends PlayerBase {
           }
         }
         break;
-      case States.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         if (this.isBallWithinReceivingRange || !this.team.isInControl) {
           this.team.setReceivingPlayer(null);
-          this.setState(States.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         } else if (this.isAtTarget) {
           this.setMode(Modes.Track);
         } else {
           this.setMode(Modes.Seek);
         }
         break;
-      case States.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         if (this.isBallWithinKickingRange) {
-          this.setState(States.KickBall);
+          this.setState(FieldPlayerStates.KickBall);
         } else if (!this.isClosestPlayerToBall) {
-          this.setState(States.ReturnToHome);
+          this.setState(FieldPlayerStates.ReturnToHome);
         }
         break;
-      case States.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         if (this.scene.gameOn) {
           if (this.shouldChaseBall) {
-            this.setState(States.ChaseBall);
+            this.setState(FieldPlayerStates.ChaseBall);
           } else if (this.isCloseToTarget(50)) {
             this.setTarget(this.position);
-            this.setState(States.Wait);
+            this.setState(FieldPlayerStates.Wait);
           }
         } else if (this.isAtTarget) {
-          this.setState(States.Wait);
+          this.setState(FieldPlayerStates.Wait);
         }
         break;
-      case States.Wait:
+      case FieldPlayerStates.Wait:
         if (!this.isAtTarget) {
           this.setMode(Modes.Seek);
         } else {
@@ -268,18 +268,25 @@ export default class PlayerField extends PlayerBase {
             ) {
               this.team.requestPass(this);
             } else if (this.shouldChaseBall) {
-              this.setState(States.ChaseBall);
+              this.setState(FieldPlayerStates.ChaseBall);
             }
           }
         }
         break;
     }
+  }
 
-    super.preUpdate(time, delta);
+  public returnHome(): this {
+    this.setState(FieldPlayerStates.ReturnToHome);
+
+    return this;
   }
 
   public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
-    if (this.state === States.Wait || this.state === States.ReturnToHome) {
+    if (
+      this.state === FieldPlayerStates.Wait ||
+      this.state === FieldPlayerStates.ReturnToHome
+    ) {
       this.setTarget(target);
     }
 
@@ -298,21 +305,15 @@ export default class PlayerField extends PlayerBase {
       ),
       MAX_PASS_POWER
     );
-    this.setState(States.Wait);
+    this.setState(FieldPlayerStates.Wait);
     receiver.receivePass(receiver.position);
     this.team.requestSupport();
 
     return this;
   }
 
-  public returnHome(): this {
-    this.setState(States.ReturnToHome);
-
-    return this;
-  }
-
   public support(): this {
-    this.setState(States.SupportAttacker);
+    this.setState(FieldPlayerStates.SupportAttacker);
 
     return this;
   }
@@ -333,7 +334,7 @@ export default class PlayerField extends PlayerBase {
       this.setMode(Modes.Pursuit);
     }
 
-    this.setState(States.ReceiveBall);
+    this.setState(FieldPlayerStates.ReceiveBall);
 
     return this;
   }

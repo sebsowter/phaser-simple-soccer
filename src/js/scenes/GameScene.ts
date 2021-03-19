@@ -125,7 +125,7 @@ export default class GameScene extends Phaser.Scene {
   public reset(): void {
     if (this.gameOn) {
       this.gameOn = false;
-      this.scoreText.setText(`${this.goalA.scored}-${this.goalB.scored}`);
+      this.scoreText.setText(`${this.goalB.scored}-${this.goalA.scored}`);
       this.teamA.kickOff();
       this.teamB.kickOff();
       this.time.delayedCall(

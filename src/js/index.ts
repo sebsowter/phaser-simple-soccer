@@ -6,12 +6,6 @@ const config: Phaser.Types.Core.GameConfig = {
   width: 1280,
   height: 704,
   zoom: 1,
-  input: {
-    keyboard: true,
-    gamepad: true,
-    mouse: false,
-    touch: false,
-  },
   render: {
     pixelArt: true,
     antialias: false,
@@ -31,5 +25,5 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 window.addEventListener("load", function () {
-  const game = new Phaser.Game(config);
+  new Phaser.Game(config);
 });

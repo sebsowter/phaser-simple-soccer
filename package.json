@@ -1,19 +1,20 @@
 {
   "name": "phaser-simple-soccer",
   "version": "1.0.0",
-  "description": "Phaser Football",
+  "description": "Phaser Simple Soccer",
   "main": "src/js/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack-dev-server --mode development",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "deploy": "gh-pages -d dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sebsowter/phaser-simple-soccer.git"
   },
   "author": "Seb Sowter",
-  "license": "MIT",
+  "license": "No License",
   "bugs": {
     "url": "https://github.com/sebsowter/phaser-simple-soccer/issues"
   },
@@ -32,12 +33,15 @@
     "file-loader": "^3.0.1",
     "html-webpack-plugin": "^3.2.0",
     "json-loader": "^0.5.7",
-    "phaser": "^3.23.0",
+    "phaser": "^3.53.1",
     "prettier": "2.1.2",
     "ts-loader": "^7.0.0",
     "typescript": "^3.8.3",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.3.0",
     "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "gh-pages": "^3.1.0"
   }
 }

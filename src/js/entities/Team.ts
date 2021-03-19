@@ -80,10 +80,6 @@ export default class Team extends Phaser.GameObjects.Group {
     this.spots = new SupportSpots(this.scene, this, isLeft);
   }
 
-  public kickOff(): void {
-    this.setState(States.PrepareForKickOff);
-  }
-
   public preUpdate(): void {
     this.setClosestPlayer();
 
@@ -139,6 +135,10 @@ export default class Team extends Phaser.GameObjects.Group {
     }
 
     return this;
+  }
+
+  public kickOff(): void {
+    this.setState(States.PrepareForKickOff);
   }
 
   public returnAllToHome(): void {

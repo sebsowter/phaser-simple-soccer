@@ -61,7 +61,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     );
   }
 
-  public movePlayer(delta: number): void {
+  public preUpdate(time: number, delta: number): void {
     const [speed, mode] = this.getData(["speed", "mode"]);
 
     switch (mode) {
@@ -219,10 +219,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     var x = this.team.goalHome.position.x;
     var y =
       this.scene.pitch.height / 2 +
-      64 -
+      this.scene.pitch.y -
       this.team.goalHome.height / 2 +
       this.team.goalHome.height *
-        ((this.scene.ball.position.y - 64) / this.scene.pitch.height);
+        ((this.scene.ball.position.y - this.scene.pitch.y) /
+          this.scene.pitch.height);
 
     return new Phaser.Math.Vector2(x, y);
   }
