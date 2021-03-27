@@ -11,10 +11,9 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.body.setBounce(0.5, 0.5);
-    this.body.setDrag(DRAG, DRAG);
-    this.body.useDamping = true;
-
+    this.setBounce(0.5, 0.5);
+    this.setDrag(DRAG, DRAG);
+    this.setDamping(true);
     this.setSize(RADIUS * 2, RADIUS * 2);
     this.setCircle(RADIUS);
   }
@@ -33,11 +32,13 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   }
 
   public timeToCoverDistance(distance: number, speed: number): number {
+    const drag = Math.pow(DRAG, TIME_DELTA);
+
     let position = 0;
     let time = 0;
 
     while (speed > 0.1 && position < distance) {
-      speed *= DRAG;
+      speed *= drag;
       position += TIME_DELTA * speed;
       time += TIME_DELTA;
 
@@ -52,10 +53,11 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   public futurePosition(time: number): Phaser.Math.Vector2 {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
+    const drag = Math.pow(DRAG, TIME_DELTA);
 
     for (let i = 0; i < time / TIME_DELTA_MILI; i++) {
-      velocity.x *= DRAG;
-      velocity.y *= DRAG;
+      velocity.x *= drag;
+      velocity.y *= drag;
       position.x += TIME_DELTA * velocity.x;
       position.y += TIME_DELTA * velocity.y;
     }

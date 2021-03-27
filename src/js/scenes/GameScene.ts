@@ -33,15 +33,27 @@ export default class GameScene extends Phaser.Scene {
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
 
+    this.physics.world.setBounds(
+      BORDER,
+      BORDER,
+      width - BORDER * 2,
+      height - BORDER * 2
+    );
+
+    this.cameras.main.setBounds(0, 0, width, height);
+
     this.pitch = new Phaser.Geom.Rectangle(
       BORDER,
       BORDER,
       width - BORDER * 2,
       height - BORDER * 2
     );
+
     this.ball = new Ball(this, width / 2, height / 2).setDepth(3);
+
     this.goalA = new Goal(this, BORDER, height / 2, 1);
     this.goalB = new Goal(this, width - BORDER, height / 2, -1);
+
     this.teamA = new Team(
       this,
       1,
@@ -60,6 +72,30 @@ export default class GameScene extends Phaser.Scene {
     ).setDepth(2);
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
+
+    const ball2 = new Ball(this, width / 2, height / 2).setDepth(3);
+    ball2.setDrag(0.5, 0.5);
+    ball2.setDamping(true);
+    ball2.kick(45, 200);
+
+    const p = ball2.futurePosition(10000);
+
+    const c = this.add.rectangle(p.x, p.y, 8, 8, 0xff0000).setDepth(3);
+
+    this.scoreText = new Phaser.GameObjects.BitmapText(
+      this,
+      width / 2,
+      12,
+      "font3x5",
+      "0-0",
+      null,
+      Phaser.GameObjects.BitmapText.ALIGN_CENTER
+    )
+      .setOrigin(1 / 16, 0)
+      .setScale(8)
+      .setDepth(10);
+
+    this.add.existing(this.scoreText);
 
     this.physics.add.collider(this.ball, [this.goalA, this.goalB]);
     this.physics.add.collider(
@@ -86,30 +122,6 @@ export default class GameScene extends Phaser.Scene {
       null,
       this
     );
-
-    this.scoreText = new Phaser.GameObjects.BitmapText(
-      this,
-      width / 2,
-      12,
-      "font3x5",
-      "0-0",
-      null,
-      Phaser.GameObjects.BitmapText.ALIGN_CENTER
-    )
-      .setOrigin(1 / 16, 0)
-      .setScale(8)
-      .setDepth(10);
-
-    this.add.existing(this.scoreText);
-
-    this.physics.world.setBounds(
-      BORDER,
-      BORDER,
-      width - BORDER * 2,
-      height - BORDER * 2
-    );
-
-    this.cameras.main.setBounds(0, 0, width, height);
   }
 
   public update(): void {

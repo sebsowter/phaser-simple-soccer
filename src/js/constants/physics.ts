@@ -1,4 +1,4 @@
-const DRAG = 0.975;
+const DRAG = 0.5;
 const TIME_DELTA = 1 / 60;
 const TIME_DELTA_MILI = TIME_DELTA * 1000;
 const MAX_SHOT_POWER = 750;

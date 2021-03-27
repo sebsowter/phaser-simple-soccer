@@ -280,11 +280,13 @@ export default class Team extends Phaser.GameObjects.Group {
   public requestSupport(): void {
     const supportingPlayer = this.calculateSupportingPlayer();
 
-    if (
-      supportingPlayer &&
-      (!this.supportingPlayer || supportingPlayer !== this.supportingPlayer)
-    ) {
-      this.setSupportingPlayer(supportingPlayer);
+    if (supportingPlayer) {
+      if (
+        !this.supportingPlayer ||
+        supportingPlayer !== this.supportingPlayer
+      ) {
+        this.setSupportingPlayer(supportingPlayer);
+      }
     }
   }
 
