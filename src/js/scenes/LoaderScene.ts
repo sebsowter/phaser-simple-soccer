@@ -1,5 +1,5 @@
 export default class LoaderScene extends Phaser.Scene {
-  public preload(): void {
+  public preload() {
     this.load.image("font3x5", "./assets/images/font3x5.png");
     this.load.image("goal", "./assets/images/goal.png");
     this.load.image("pitch", "./assets/images/pitch.png");
@@ -9,23 +9,7 @@ export default class LoaderScene extends Phaser.Scene {
     });
   }
 
-  public create(): void {
-    this.game.events.on(
-      Phaser.Core.Events.BLUR,
-      function () {
-        this.scene.get("game").scene.pause();
-      },
-      this
-    );
-
-    this.game.events.on(
-      Phaser.Core.Events.FOCUS,
-      function () {
-        this.scene.get("game").scene.resume();
-      },
-      this
-    );
-
+  public create() {
     this.cache.bitmapFont.add(
       "font3x5",
       Phaser.GameObjects.RetroFont.Parse(this, {
@@ -40,6 +24,22 @@ export default class LoaderScene extends Phaser.Scene {
         "offset.x": 0,
         "offset.y": 0,
       })
+    );
+
+    this.game.events.on(
+      Phaser.Core.Events.BLUR,
+      function () {
+        this.scene.get("game").scene.pause();
+      },
+      this
+    );
+
+    this.game.events.on(
+      Phaser.Core.Events.FOCUS,
+      function () {
+        this.scene.get("game").scene.resume();
+      },
+      this
     );
 
     this.scene.start("game");

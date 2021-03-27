@@ -73,15 +73,6 @@ export default class GameScene extends Phaser.Scene {
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
-    const ball2 = new Ball(this, width / 2, height / 2).setDepth(3);
-    ball2.setDrag(0.5, 0.5);
-    ball2.setDamping(true);
-    ball2.kick(45, 200);
-
-    const p = ball2.futurePosition(10000);
-
-    const c = this.add.rectangle(p.x, p.y, 8, 8, 0xff0000).setDepth(3);
-
     this.scoreText = new Phaser.GameObjects.BitmapText(
       this,
       width / 2,
@@ -91,7 +82,7 @@ export default class GameScene extends Phaser.Scene {
       null,
       Phaser.GameObjects.BitmapText.ALIGN_CENTER
     )
-      .setOrigin(1 / 16, 0)
+      .setOrigin(0.5, 0)
       .setScale(8)
       .setDepth(10);
 

@@ -1,4 +1,4 @@
-import { DRAG, TIME_DELTA, TIME_DELTA_MILI } from "../constants";
+import { DRAG, DRAG_DELTA, TIME_DELTA, TIME_DELTA_MILI } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
@@ -18,31 +18,31 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setCircle(RADIUS);
   }
 
-  public kick(angle: number, power: number): void {
-    this.setVelocity(power * Math.cos(angle), power * Math.sin(angle));
+  public kick(rotation: number, power: number) {
+    this.setVelocity(power * Math.cos(rotation), power * Math.sin(rotation));
   }
 
-  public place(x: number, y: number): void {
+  public place(x: number, y: number) {
     this.setVelocity(0, 0);
+    this.setAngularVelocity(0);
     this.setPosition(x, y);
   }
 
-  public trap(): void {
+  public trap() {
     this.setVelocity(0, 0);
+    this.setAngularVelocity(0);
   }
 
-  public timeToCoverDistance(distance: number, speed: number): number {
-    const drag = Math.pow(DRAG, TIME_DELTA);
-
+  public timeToCoverDistance(distance: number, velocity: number): number {
     let position = 0;
     let time = 0;
 
-    while (speed > 0.1 && position < distance) {
-      speed *= drag;
-      position += TIME_DELTA * speed;
+    while (velocity > 0.1 && position < distance) {
+      velocity *= DRAG_DELTA;
+      position += TIME_DELTA * velocity;
       time += TIME_DELTA;
 
-      if (speed <= 0.1) {
+      if (velocity <= 0.1) {
         time = -1;
       }
     }
@@ -53,11 +53,10 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   public futurePosition(time: number): Phaser.Math.Vector2 {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
-    const drag = Math.pow(DRAG, TIME_DELTA);
 
     for (let i = 0; i < time / TIME_DELTA_MILI; i++) {
-      velocity.x *= drag;
-      velocity.y *= drag;
+      velocity.x *= DRAG_DELTA;
+      velocity.y *= DRAG_DELTA;
       position.x += TIME_DELTA * velocity.x;
       position.y += TIME_DELTA * velocity.y;
     }
