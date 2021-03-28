@@ -1,5 +1,14 @@
-import { Ball, Goal, Team } from "../entities";
+import {
+  Ball,
+  Goal,
+  PlayerBase,
+  Team,
+  TeamStates,
+  PlayerFieldStates,
+  PlayerKeeperStates,
+} from "../entities";
 import { redRegions, blueRegions } from "../constants";
+import { setText } from "../utils";
 
 export default class GameScene extends Phaser.Scene {
   public ball: Ball;
@@ -7,8 +16,9 @@ export default class GameScene extends Phaser.Scene {
   public teamB: Team;
   public goalA: Goal;
   public goalB: Goal;
-  public pitch: Phaser.Geom.Rectangle;
   public scoreText: Phaser.GameObjects.BitmapText;
+
+  private _pitch: Phaser.Geom.Rectangle;
 
   constructor() {
     super({
@@ -18,7 +28,7 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  public init(): void {
+  public init() {
     this.data.set(
       {
         goalkeeperHasBall: false,
@@ -28,7 +38,7 @@ export default class GameScene extends Phaser.Scene {
     );
   }
 
-  public create(): void {
+  public create() {
     const BORDER = 64;
     const pitch = this.add.image(0, 0, "pitch").setOrigin(0, 0);
     const { width, height } = pitch;
@@ -42,7 +52,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, width, height);
 
-    this.pitch = new Phaser.Geom.Rectangle(
+    this._pitch = new Phaser.Geom.Rectangle(
       BORDER,
       BORDER,
       width - BORDER * 2,
@@ -115,19 +125,79 @@ export default class GameScene extends Phaser.Scene {
     );
   }
 
-  public update(): void {
-    if (
-      !this.gameOn &&
-      this.teamA.isAllPlayersHome &&
-      this.teamB.isAllPlayersHome
-    ) {
-      this.gameOn = true;
+  public update() {
+    if (!this.gameOn && this.isAllPlayersHome) {
+      this.setGameOn(true);
     }
+
+    [this.teamA, this.teamB].forEach((team: Team) => {
+      const teamState =
+        team.state === TeamStates.Attacking
+          ? "Attacking"
+          : team.state === TeamStates.PrepareForKickOff
+          ? "PrepareForKickOff"
+          : "Defending";
+      setText(`#${team.name}-state`, teamState);
+      setText(
+        `#${team.name}-closest`,
+        team.closestPlayer ? (team.closestPlayer.index + 1).toString() : "-"
+      );
+      setText(
+        `#${team.name}-controlling`,
+        team.controllingPlayer
+          ? (team.controllingPlayer.index + 1).toString()
+          : "-"
+      );
+      setText(
+        `#${team.name}-supporting`,
+        team.supportingPlayer
+          ? (team.supportingPlayer.index + 1).toString()
+          : "-"
+      );
+      setText(
+        `#${team.name}-receiving`,
+        team.receivingPlayer ? (team.receivingPlayer.index + 1).toString() : "-"
+      );
+
+      team.players.forEach((player: PlayerBase, index: number) => {
+        const selector = `#${team.name}-${index + 1}`;
+
+        let state;
+
+        if (index > 0) {
+          state =
+            player.state === PlayerFieldStates.ChaseBall
+              ? "ChaseBall"
+              : player.state === PlayerFieldStates.Dribble
+              ? "Dribble"
+              : player.state === PlayerFieldStates.KickBall
+              ? "KickBall"
+              : player.state === PlayerFieldStates.ReceiveBall
+              ? "ReceiveBall"
+              : player.state === PlayerFieldStates.ReturnToHome
+              ? "ReturnToHome"
+              : player.state === PlayerFieldStates.SupportAttacker
+              ? "SupportAttacker"
+              : "Wait";
+        } else {
+          state =
+            player.state === PlayerKeeperStates.InterceptBall
+              ? "InterceptBall"
+              : player.state === PlayerKeeperStates.PutBallBackInPlay
+              ? "PutBallBackInPlay"
+              : player.state === PlayerKeeperStates.ReturnToHome
+              ? "ReturnToHome"
+              : "TendGoal";
+        }
+
+        setText(selector, `${player.isAtHome} : ${state}`);
+      });
+    });
   }
 
-  public reset(): void {
+  public reset() {
     if (this.gameOn) {
-      this.gameOn = false;
+      this.setGameOn(false);
       this.scoreText.setText(`${this.goalB.scored}-${this.goalA.scored}`);
       this.teamA.kickOff();
       this.teamB.kickOff();
@@ -142,11 +212,11 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  public setGoalkeeperHasBall(value: boolean): void {
-    this.goalkeeperHasBall = value;
+  public get isAllPlayersHome(): boolean {
+    return this.teamA.isAllPlayersHome && this.teamB.isAllPlayersHome;
   }
 
-  public set goalkeeperHasBall(value: boolean) {
+  public setGoalkeeperHasBall(value: boolean) {
     this.data.set("goalkeeperHasBall", value);
   }
 
@@ -154,11 +224,15 @@ export default class GameScene extends Phaser.Scene {
     return this.data.get("goalkeeperHasBall");
   }
 
-  public set gameOn(value: boolean) {
+  public setGameOn(value: boolean) {
     this.data.set("gameOn", value);
   }
 
   public get gameOn(): boolean {
     return this.data.get("gameOn");
+  }
+
+  public get pitch(): Phaser.Geom.Rectangle {
+    return this._pitch;
   }
 }

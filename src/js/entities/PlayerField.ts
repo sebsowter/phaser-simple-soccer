@@ -1,7 +1,5 @@
-import GameScene from "../scenes/GameScene";
 import Team from "./Team";
 import { PlayerProps } from "../types";
-import { setText } from "../utils";
 import {
   MAX_SHOT_POWER,
   MAX_PASS_POWER,
@@ -14,10 +12,9 @@ import {
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
 } from "../constants";
-import Info from "./Info";
-import PlayerBase, { Modes } from "./PlayerBase";
+import PlayerBase, { PlayerModes } from "./PlayerBase";
 
-enum FieldPlayerStates {
+export enum PlayerFieldStates {
   Wait,
   ReceiveBall,
   KickBall,
@@ -28,13 +25,6 @@ enum FieldPlayerStates {
 }
 
 export default class PlayerField extends PlayerBase {
-  public scene: GameScene;
-  public body: Phaser.Physics.Arcade.Body;
-  public team: Team;
-  public info: Info;
-  public home: Phaser.Math.Vector2;
-  public target: Phaser.Math.Vector2;
-
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -48,43 +38,36 @@ export default class PlayerField extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
-    this.setState(FieldPlayerStates.ReturnToHome);
+    this.setState(PlayerFieldStates.ReturnToHome);
   }
 
-  public setState(value: FieldPlayerStates): this {
-    const selector = `#${this.getData("name")}-${this.getData("index") + 1}`;
-
+  public setState(value: PlayerFieldStates): this {
     switch (this.state) {
-      case FieldPlayerStates.ReceiveBall:
+      case PlayerFieldStates.ReceiveBall:
         this.team.receivingPlayer = null;
         break;
-      case FieldPlayerStates.SupportAttacker:
+      case PlayerFieldStates.SupportAttacker:
         this.team.supportingPlayer = null;
         break;
     }
 
     switch (value) {
-      case FieldPlayerStates.ChaseBall:
-        setText(selector, "ChaseBall");
-        this.setMode(Modes.Pursuit);
+      case PlayerFieldStates.ChaseBall:
+        this.setMode(PlayerModes.Pursuit);
         break;
-      case FieldPlayerStates.ReceiveBall:
-        setText(selector, "ReceiveBall");
+      case PlayerFieldStates.ReceiveBall:
         break;
-      case FieldPlayerStates.Dribble:
-        setText(selector, "Dribble");
+      case PlayerFieldStates.Dribble:
         this.team.setControllingPlayer(this);
         break;
-      case FieldPlayerStates.SupportAttacker:
-        setText(selector, "SupportAttacker");
+      case PlayerFieldStates.SupportAttacker:
         this.setTarget(this.team.getSupportSpot());
         break;
-      case FieldPlayerStates.KickBall:
-        setText(selector, "KickBall");
+      case PlayerFieldStates.KickBall:
         this.team.setControllingPlayer(this);
         this.setVelocity(0, 0);
         if (!this.isReadyForNextKick) {
-          this.setState(FieldPlayerStates.ChaseBall);
+          this.setState(PlayerFieldStates.ChaseBall);
         } else {
           this.setData({ isReadyForNextKick: false });
           this.scene.time.delayedCall(
@@ -97,13 +80,13 @@ export default class PlayerField extends PlayerBase {
           );
         }
         break;
-      case FieldPlayerStates.ReturnToHome:
-        setText(selector, "ReturnToHome");
+
+      case PlayerFieldStates.ReturnToHome:
         this.setTarget(this.home);
-        this.setMode(Modes.Seek);
+        this.setMode(PlayerModes.Seek);
         break;
-      case FieldPlayerStates.Wait:
-        setText(selector, "Wait");
+
+      case PlayerFieldStates.Wait:
         this.setVelocity(0, 0);
         if (!this.scene.gameOn) {
           this.setTarget(this.home);
@@ -118,7 +101,7 @@ export default class PlayerField extends PlayerBase {
     super.preUpdate(time, delta);
 
     switch (this.state) {
-      case FieldPlayerStates.KickBall:
+      case PlayerFieldStates.KickBall:
         const dot = this.facing.dot(
           this.scene.ball.position.clone().subtract(this.position).normalize()
         );
@@ -128,7 +111,7 @@ export default class PlayerField extends PlayerBase {
           this.scene.goalkeeperHasBall ||
           dot < 0
         ) {
-          this.setState(FieldPlayerStates.ChaseBall);
+          this.setState(PlayerFieldStates.ChaseBall);
         } else {
           const powerShot = MAX_SHOT_POWER * dot;
           const canShoot = this.team.canShoot(
@@ -142,7 +125,7 @@ export default class PlayerField extends PlayerBase {
               powerShot
             );
             this.team.requestSupport();
-            this.setState(FieldPlayerStates.Wait);
+            this.setState(PlayerFieldStates.Wait);
           } else {
             const powerPass = MAX_PASS_POWER * dot;
             const canPass = this.team.findPass(
@@ -161,16 +144,17 @@ export default class PlayerField extends PlayerBase {
 
               this.scene.ball.kick(targeAngle, powerPass);
               receiver.receivePass(targetPos);
-              this.setState(FieldPlayerStates.Wait);
+              this.setState(PlayerFieldStates.Wait);
               this.team.requestSupport();
             } else {
-              this.setState(FieldPlayerStates.Dribble);
+              this.setState(PlayerFieldStates.Dribble);
               this.team.requestSupport();
             }
           }
         }
         break;
-      case FieldPlayerStates.Dribble:
+
+      case PlayerFieldStates.Dribble:
         const { facing } = this.team.goal;
         const goalDot = facing.dot(this.facing);
 
@@ -197,17 +181,18 @@ export default class PlayerField extends PlayerBase {
           );
         }
 
-        this.setState(FieldPlayerStates.ChaseBall);
+        this.setState(PlayerFieldStates.ChaseBall);
         break;
-      case FieldPlayerStates.SupportAttacker:
+
+      case PlayerFieldStates.SupportAttacker:
         if (!this.team.isInControl) {
-          this.setState(FieldPlayerStates.ReturnToHome);
+          this.setState(PlayerFieldStates.ReturnToHome);
         } else {
           // If the best supporting spot changes, change the steering target.
           const supportSpot = this.team.getSupportSpot();
 
           if (supportSpot !== this.target) {
-            this.setMode(Modes.Seek);
+            this.setMode(PlayerModes.Seek);
             this.setTarget(supportSpot);
           }
 
@@ -217,7 +202,7 @@ export default class PlayerField extends PlayerBase {
           }
 
           if (this.isAtTarget) {
-            this.setMode(Modes.Track);
+            this.setMode(PlayerModes.Track);
 
             if (!this.isThreatened) {
               this.team.requestPass(this);
@@ -225,40 +210,44 @@ export default class PlayerField extends PlayerBase {
           }
         }
         break;
-      case FieldPlayerStates.ReceiveBall:
+
+      case PlayerFieldStates.ReceiveBall:
         if (this.isBallWithinReceivingRange || !this.team.isInControl) {
           this.team.setReceivingPlayer(null);
-          this.setState(FieldPlayerStates.ChaseBall);
+          this.setState(PlayerFieldStates.ChaseBall);
         } else if (this.isAtTarget) {
-          this.setMode(Modes.Track);
+          this.setMode(PlayerModes.Track);
         } else {
-          this.setMode(Modes.Seek);
+          this.setMode(PlayerModes.Seek);
         }
         break;
-      case FieldPlayerStates.ChaseBall:
+
+      case PlayerFieldStates.ChaseBall:
         if (this.isBallWithinKickingRange) {
-          this.setState(FieldPlayerStates.KickBall);
+          this.setState(PlayerFieldStates.KickBall);
         } else if (!this.isClosestPlayerToBall) {
-          this.setState(FieldPlayerStates.ReturnToHome);
+          this.setState(PlayerFieldStates.ReturnToHome);
         }
         break;
-      case FieldPlayerStates.ReturnToHome:
+
+      case PlayerFieldStates.ReturnToHome:
         if (this.scene.gameOn) {
           if (this.shouldChaseBall) {
-            this.setState(FieldPlayerStates.ChaseBall);
+            this.setState(PlayerFieldStates.ChaseBall);
           } else if (this.isCloseToTarget(50)) {
             this.setTarget(this.position);
-            this.setState(FieldPlayerStates.Wait);
+            this.setState(PlayerFieldStates.Wait);
           }
         } else if (this.isAtTarget) {
-          this.setState(FieldPlayerStates.Wait);
+          this.setState(PlayerFieldStates.Wait);
         }
         break;
-      case FieldPlayerStates.Wait:
+
+      case PlayerFieldStates.Wait:
         if (!this.isAtTarget) {
-          this.setMode(Modes.Seek);
+          this.setMode(PlayerModes.Seek);
         } else {
-          this.setMode(Modes.Track);
+          this.setMode(PlayerModes.Track);
 
           if (this.scene.gameOn) {
             if (
@@ -268,7 +257,7 @@ export default class PlayerField extends PlayerBase {
             ) {
               this.team.requestPass(this);
             } else if (this.shouldChaseBall) {
-              this.setState(FieldPlayerStates.ChaseBall);
+              this.setState(PlayerFieldStates.ChaseBall);
             }
           }
         }
@@ -277,15 +266,15 @@ export default class PlayerField extends PlayerBase {
   }
 
   public returnHome(): this {
-    this.setState(FieldPlayerStates.ReturnToHome);
+    this.setState(PlayerFieldStates.ReturnToHome);
 
     return this;
   }
 
   public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
     if (
-      this.state === FieldPlayerStates.Wait ||
-      this.state === FieldPlayerStates.ReturnToHome
+      this.state === PlayerFieldStates.Wait ||
+      this.state === PlayerFieldStates.ReturnToHome
     ) {
       this.setTarget(target);
     }
@@ -305,7 +294,7 @@ export default class PlayerField extends PlayerBase {
       ),
       MAX_PASS_POWER
     );
-    this.setState(FieldPlayerStates.Wait);
+    this.setState(PlayerFieldStates.Wait);
     receiver.receivePass(receiver.position);
     this.team.requestSupport();
 
@@ -313,7 +302,7 @@ export default class PlayerField extends PlayerBase {
   }
 
   public support(): this {
-    this.setState(FieldPlayerStates.SupportAttacker);
+    this.setState(PlayerFieldStates.SupportAttacker);
 
     return this;
   }
@@ -329,12 +318,12 @@ export default class PlayerField extends PlayerBase {
       (Math.random() < 0.5 &&
         !this.team.isOpponentWithinRadius(this.position, PASS_THREAT_RADIUS))
     ) {
-      this.setMode(Modes.Seek);
+      this.setMode(PlayerModes.Seek);
     } else {
-      this.setMode(Modes.Pursuit);
+      this.setMode(PlayerModes.Pursuit);
     }
 
-    this.setState(FieldPlayerStates.ReceiveBall);
+    this.setState(PlayerFieldStates.ReceiveBall);
 
     return this;
   }
@@ -369,11 +358,11 @@ export default class PlayerField extends PlayerBase {
   }
 
   public get isAheadOfAttacker(): boolean {
+    const goalX = this.team.goal.position.x;
+
     return (
-      Math.abs(this.position.x - this.team.goal.position.x) <
-      Math.abs(
-        this.team.controllingPlayer.position.x - this.team.goal.position.x
-      )
+      Math.abs(this.position.x - goalX) <
+      Math.abs(this.team.controllingPlayer.position.x - goalX)
     );
   }
 

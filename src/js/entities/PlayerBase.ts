@@ -4,7 +4,7 @@ import { PlayerProps } from "../types";
 import { TIME_DELTA_MILI } from "../constants";
 import Info from "./Info";
 
-export enum Modes {
+export enum PlayerModes {
   Track,
   Seek,
   Pursuit,
@@ -14,10 +14,10 @@ export enum Modes {
 export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public scene: GameScene;
   public body: Phaser.Physics.Arcade.Body;
-  public team: Team;
-  public info: Info;
-  public home: Phaser.Math.Vector2;
-  public target: Phaser.Math.Vector2;
+
+  private _home: Phaser.Math.Vector2;
+  private _target: Phaser.Math.Vector2;
+  private _team: Team;
 
   constructor(
     scene: Phaser.Scene,
@@ -32,8 +32,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, "sprites", frame);
 
-    this.home = home;
-    this.team = team;
+    this._home = home;
+    this._team = team;
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
@@ -43,29 +43,29 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       name,
       index,
       isReadyForNextKick: true,
-      mode: Modes.Track,
+      mode: PlayerModes.Track,
     });
     this.setSize(16, 16);
     this.setCircle(8);
     this.setDepth(3);
 
-    this.info = new Info(this.scene, index, team.isLeft);
+    const info = new Info(this.scene, index, team.isLeft);
 
     this.scene.events.on(
       "postupdate",
       function () {
-        this.info.x = this.x;
-        this.info.y = this.y;
+        info.x = this.x;
+        info.y = this.y;
       },
       this
     );
   }
 
-  public preUpdate(time: number, delta: number): void {
+  public preUpdate(time: number, delta: number) {
     const [speed, mode] = this.getData(["speed", "mode"]);
 
     switch (mode) {
-      case Modes.Pursuit:
+      case PlayerModes.Pursuit:
         const ballSpeed = this.scene.ball.body.speed;
         const magnitude = this.scene.ball.position
           .clone()
@@ -79,10 +79,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         }
 
         this.setTarget(this.scene.ball.futurePosition(lookAheadTime));
-      case Modes.Seek:
+
+      case PlayerModes.Seek:
         const targetAngle = Phaser.Math.Angle.BetweenPoints(
           this.position,
-          this.target
+          this._target
         );
 
         this.setRotation(targetAngle);
@@ -91,7 +92,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           speed * delta * Math.sin(targetAngle)
         );
         break;
-      case Modes.Track:
+
+      case PlayerModes.Track:
         this.setVelocity(0, 0);
         this.setRotation(
           Phaser.Math.Angle.BetweenPoints(
@@ -100,7 +102,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           )
         );
         break;
-      case Modes.Interpose:
+
+      case PlayerModes.Interpose:
         const targetAn = Phaser.Math.Angle.BetweenPoints(
           this.position,
           this.scene.ball.position
@@ -108,15 +111,15 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
         this.setTarget(this.rearInterposeTarget);
 
-        const distance2 = this.position.distance(this.target);
+        const distance = this.position.distance(this._target);
 
         var temp1 = new Phaser.Math.Vector2(
-          this.scene.ball.position.x - this.target.x,
-          this.scene.ball.position.y - this.target.y
+          this.scene.ball.position.x - this._target.x,
+          this.scene.ball.position.y - this._target.y
         ).normalize();
         var temp2 = new Phaser.Math.Vector2(
-          this.target.x + temp1.x * distance2,
-          this.target.y + temp1.y * distance2
+          this._target.x + temp1.x * distance,
+          this._target.y + temp1.y * distance
         );
 
         const targetAngle2 = Phaser.Math.Angle.BetweenPoints(
@@ -133,21 +136,13 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  public setMode(value: Modes): this {
+  public setMode(value: PlayerModes): this {
     this.setData({ mode: value });
 
     return this;
   }
 
-  public setTarget(value: Phaser.Math.Vector2): this {
-    this.target = value;
-
-    return this;
-  }
-
-  public setHome(value: Phaser.Math.Vector2): this {
-    this.home = value;
-
+  public support(): this {
     return this;
   }
 
@@ -164,11 +159,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public isCloseToHome(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this.home, epsilon);
+    return this.position.fuzzyEquals(this._home, epsilon);
   }
 
   public isCloseToTarget(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this.target, epsilon);
+    return this.position.fuzzyEquals(this._target, epsilon);
   }
 
   public inHomeRegion(): boolean {
@@ -181,6 +176,34 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get isAtTarget(): boolean {
     return this.isCloseToTarget();
+  }
+
+  public setTarget(value: Phaser.Math.Vector2): this {
+    this._target = value;
+
+    return this;
+  }
+
+  public get target(): Phaser.Math.Vector2 {
+    return this._target;
+  }
+
+  public setHome(value: Phaser.Math.Vector2): this {
+    this._home = value;
+
+    return this;
+  }
+
+  public get home(): Phaser.Math.Vector2 {
+    return this._home;
+  }
+
+  public get team(): Team {
+    return this._team;
+  }
+
+  public get isControllingPlayer(): boolean {
+    return false;
   }
 
   public get position(): Phaser.Math.Vector2 {
@@ -197,6 +220,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get speedPerFrame(): number {
     return this.getData("speed");
+  }
+
+  public get index(): number {
+    return this.getData("index");
   }
 
   public get isReadyForNextKick(): boolean {
@@ -216,8 +243,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get rearInterposeTarget(): Phaser.Math.Vector2 {
-    var x = this.team.goalHome.position.x;
-    var y =
+    const x = this.team.goalHome.position.x;
+    const y =
       this.scene.pitch.height / 2 +
       this.scene.pitch.y -
       this.team.goalHome.height / 2 +
