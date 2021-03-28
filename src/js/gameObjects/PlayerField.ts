@@ -97,7 +97,7 @@ export default class PlayerField extends PlayerBase {
     return super.setState(value);
   }
 
-  public preUpdate(time: number, delta: number): void {
+  public preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
 
     switch (this.state) {
@@ -155,7 +155,7 @@ export default class PlayerField extends PlayerBase {
         break;
 
       case PlayerFieldStates.Dribble:
-        const { facing } = this.team.goal;
+        const { facing } = this.team.goalTarget;
         const goalDot = facing.dot(this.facing);
 
         // If back to goal kick ball at an angle to turn.
@@ -175,7 +175,7 @@ export default class PlayerField extends PlayerBase {
           this.scene.ball.kick(
             Phaser.Math.Angle.BetweenPoints(
               this.position,
-              this.team.goal.position
+              this.team.goalTarget.position
             ),
             DRIBBLE_POWER_GOAL
           );
@@ -358,7 +358,7 @@ export default class PlayerField extends PlayerBase {
   }
 
   public get isAheadOfAttacker(): boolean {
-    const goalX = this.team.goal.position.x;
+    const goalX = this.team.goalTarget.position.x;
 
     return (
       Math.abs(this.position.x - goalX) <
@@ -380,7 +380,7 @@ export default class PlayerField extends PlayerBase {
 
   public get isInHotPosition(): boolean {
     return (
-      Math.abs(this.position.y - this.team.goal.position.y) <
+      Math.abs(this.position.y - this.team.goalTarget.position.y) <
       this.scene.pitch.width / 3
     );
   }

@@ -39,7 +39,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
 
     while (velocity > 0.1 && position < distance) {
       velocity *= DRAG_DELTA;
-      position += TIME_DELTA * velocity;
+      position += velocity * TIME_DELTA;
       time += TIME_DELTA;
 
       if (velocity <= 0.1) {
@@ -57,8 +57,8 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     for (let i = 0; i < time / TIME_DELTA_MILI; i++) {
       velocity.x *= DRAG_DELTA;
       velocity.y *= DRAG_DELTA;
-      position.x += TIME_DELTA * velocity.x;
-      position.y += TIME_DELTA * velocity.y;
+      position.x += velocity.x * TIME_DELTA;
+      position.y += velocity.y * TIME_DELTA;
     }
 
     return position;

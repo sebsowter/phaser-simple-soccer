@@ -3,10 +3,10 @@ import { GameScene } from "../scenes";
 export default class GoalGroup extends Phaser.GameObjects.Group {
   public scene: GameScene;
 
-  private _target: Phaser.GameObjects.Rectangle;
   private _scored: number = 0;
-  private _goal: Phaser.GameObjects.Image;
   private _facing: Phaser.Math.Vector2;
+  private _bounds: Phaser.GameObjects.Rectangle;
+  private _image: Phaser.GameObjects.Image;
 
   constructor(scene: GameScene, x: number, y: number, facing: number) {
     super(scene);
@@ -15,12 +15,12 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
 
     this._facing = new Phaser.Math.Vector2(facing, 0);
 
-    this._goal = this.scene.add
+    this._image = this.scene.add
       .image(x - facing * 32, y, "goal")
       .setFlipX(facing < 0)
       .setDepth(8);
 
-    this._target = new Phaser.GameObjects.Rectangle(
+    this._bounds = new Phaser.GameObjects.Rectangle(
       this.scene,
       x - facing * 42,
       y,
@@ -30,7 +30,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       0
     ).setDepth(10);
 
-    this.scene.add.existing(this._target);
+    this.scene.add.existing(this._bounds);
 
     const top = new Phaser.GameObjects.Rectangle(
       this.scene,
@@ -69,7 +69,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     );
 
     this.scene.physics.world.enable(
-      this._target,
+      this.bounds,
       Phaser.Physics.Arcade.STATIC_BODY
     );
     this.scene.physics.world.enable(back, Phaser.Physics.Arcade.STATIC_BODY);
@@ -88,7 +88,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     this.add(bottomPost);
   }
 
-  public score() {
+  public incrementScore() {
     if (this.scene.gameOn) {
       this._scored++;
 
@@ -96,30 +96,30 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     }
   }
 
-  public get facing(): Phaser.Math.Vector2 {
-    return this._facing;
-  }
-
   public get scored(): number {
     return this._scored;
   }
 
-  public get target(): Phaser.GameObjects.Rectangle {
-    return this._target;
+  public get facing(): Phaser.Math.Vector2 {
+    return this._facing;
+  }
+
+  public get bounds(): Phaser.GameObjects.Rectangle {
+    return this._bounds;
   }
 
   public get width(): number {
-    return this._goal.width;
+    return this._image.width;
   }
 
   public get height(): number {
-    return this._goal.height - 2 * 8;
+    return this._image.height - 2 * 8;
   }
 
   public get position(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2(
-      this._goal.x + this._facing.x * 32,
-      this._goal.y
+      this._image.x + this._facing.x * 32,
+      this._image.y
     );
   }
 }

@@ -6,7 +6,7 @@ import {
   TeamStates,
   PlayerFieldStates,
   PlayerKeeperStates,
-} from "../entities";
+} from "../gameObjects";
 import { redRegions, blueRegions } from "../constants";
 import { setText } from "../utils";
 
@@ -107,18 +107,18 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.teamB, this.teamA);
     this.physics.add.overlap(
       this.ball,
-      this.goalA.target,
+      this.goalA.bounds,
       function () {
-        this.goalA.score();
+        this.goalA.incrementScore();
       },
       null,
       this
     );
     this.physics.add.overlap(
       this.ball,
-      this.goalB.target,
+      this.goalB.bounds,
       function () {
-        this.goalB.score();
+        this.goalB.incrementScore();
       },
       null,
       this
@@ -130,69 +130,7 @@ export default class GameScene extends Phaser.Scene {
       this.setGameOn(true);
     }
 
-    [this.teamA, this.teamB].forEach((team: Team) => {
-      const teamState =
-        team.state === TeamStates.Attacking
-          ? "Attacking"
-          : team.state === TeamStates.PrepareForKickOff
-          ? "PrepareForKickOff"
-          : "Defending";
-      setText(`#${team.name}-state`, teamState);
-      setText(
-        `#${team.name}-closest`,
-        team.closestPlayer ? (team.closestPlayer.index + 1).toString() : "-"
-      );
-      setText(
-        `#${team.name}-controlling`,
-        team.controllingPlayer
-          ? (team.controllingPlayer.index + 1).toString()
-          : "-"
-      );
-      setText(
-        `#${team.name}-supporting`,
-        team.supportingPlayer
-          ? (team.supportingPlayer.index + 1).toString()
-          : "-"
-      );
-      setText(
-        `#${team.name}-receiving`,
-        team.receivingPlayer ? (team.receivingPlayer.index + 1).toString() : "-"
-      );
-
-      team.players.forEach((player: PlayerBase, index: number) => {
-        const selector = `#${team.name}-${index + 1}`;
-
-        let state;
-
-        if (index > 0) {
-          state =
-            player.state === PlayerFieldStates.ChaseBall
-              ? "ChaseBall"
-              : player.state === PlayerFieldStates.Dribble
-              ? "Dribble"
-              : player.state === PlayerFieldStates.KickBall
-              ? "KickBall"
-              : player.state === PlayerFieldStates.ReceiveBall
-              ? "ReceiveBall"
-              : player.state === PlayerFieldStates.ReturnToHome
-              ? "ReturnToHome"
-              : player.state === PlayerFieldStates.SupportAttacker
-              ? "SupportAttacker"
-              : "Wait";
-        } else {
-          state =
-            player.state === PlayerKeeperStates.InterceptBall
-              ? "InterceptBall"
-              : player.state === PlayerKeeperStates.PutBallBackInPlay
-              ? "PutBallBackInPlay"
-              : player.state === PlayerKeeperStates.ReturnToHome
-              ? "ReturnToHome"
-              : "TendGoal";
-        }
-
-        setText(selector, `${player.isAtHome} : ${state}`);
-      });
-    });
+    this.updateUi();
   }
 
   public reset() {
@@ -234,5 +172,82 @@ export default class GameScene extends Phaser.Scene {
 
   public get pitch(): Phaser.Geom.Rectangle {
     return this._pitch;
+  }
+
+  private updateUi() {
+    function getTeamState(team: Team): string {
+      switch (team.state) {
+        case TeamStates.Attacking:
+          return "Attacking";
+        case TeamStates.PrepareForKickOff:
+          return "PrepareForKickOff";
+        case TeamStates.Defending:
+        default:
+          return "Defending";
+      }
+    }
+
+    function getPlayerState(player: PlayerBase): string {
+      if (player.role === "GK") {
+        switch (player.state) {
+          case PlayerKeeperStates.InterceptBall:
+            return "InterceptBall";
+          case PlayerKeeperStates.PutBallBackInPlay:
+            return "PutBallBackInPlay";
+          case PlayerKeeperStates.ReturnToHome:
+            return "ReturnToHome";
+          case PlayerKeeperStates.TendGoal:
+          default:
+            return "TendGoal";
+        }
+      }
+
+      switch (player.state) {
+        case PlayerFieldStates.ChaseBall:
+          return "ChaseBall";
+        case PlayerFieldStates.Dribble:
+          return "Dribble";
+        case PlayerFieldStates.KickBall:
+          return "KickBall";
+        case PlayerFieldStates.ReceiveBall:
+          return "ReceiveBall";
+        case PlayerFieldStates.ReturnToHome:
+          return "ReturnToHome";
+        case PlayerFieldStates.SupportAttacker:
+          return "Support";
+        case PlayerFieldStates.Wait:
+        default:
+          return "Wait";
+      }
+    }
+
+    [this.teamA, this.teamB].forEach((team: Team) => {
+      setText(`#${team.name}-state`, getTeamState(team));
+      setText(
+        `#${team.name}-closest`,
+        team.closestPlayer ? (team.closestPlayer.index + 1).toString() : "-"
+      );
+      setText(
+        `#${team.name}-controlling`,
+        team.controllingPlayer
+          ? (team.controllingPlayer.index + 1).toString()
+          : "-"
+      );
+      setText(
+        `#${team.name}-supporting`,
+        team.supportingPlayer
+          ? (team.supportingPlayer.index + 1).toString()
+          : "-"
+      );
+      setText(
+        `#${team.name}-receiving`,
+        team.receivingPlayer ? (team.receivingPlayer.index + 1).toString() : "-"
+      );
+
+      team.players.forEach((player: PlayerBase, index: number) => {
+        setText(`#${team.name}-${index + 1}`, getPlayerState(player));
+        setText(`#${team.name}-home-${index + 1}`, `${player.isAtHome}`);
+      });
+    });
   }
 }

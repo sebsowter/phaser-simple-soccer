@@ -5,7 +5,6 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: 1280,
   height: 704,
-  zoom: 1,
   render: {
     pixelArt: true,
     antialias: false,
@@ -25,5 +24,5 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 window.addEventListener("load", function () {
-  new Phaser.Game(config);
+  const game = new Phaser.Game(config);
 });

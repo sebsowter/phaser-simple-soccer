@@ -85,7 +85,7 @@ export default class SupportSpots {
       }
 
       if (this._team.isInControl) {
-        const OPTIMAL_DISTANCE = 200;
+        const OPTIMAL_DISTANCE = 300;
         const distance = this._team.controllingPlayer.position.distance(spot);
         const normal = Math.abs(OPTIMAL_DISTANCE - distance);
 
