@@ -1,5 +1,7 @@
 # Phaser 3 Simple Soccer
 
+Programming Game AI by Example by Mat Buckland.
+
 ## Installation
 
 Ensure you have [Node.js](https://nodejs.org) installed.

@@ -1,36 +1,46 @@
-import { DRAG, DRAG_DELTA, TIME_DELTA, TIME_DELTA_MILI } from "../constants";
+import { DELTA } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    const RADIUS = 4;
+    const RADIUS = 8;
+    const BOUNCE = 0.5;
+    const DRAG = 0.25;
 
     super(scene, x, y, "sprites", 0);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.setBounce(0.5, 0.5);
+    this.setBounce(BOUNCE, BOUNCE);
     this.setDrag(DRAG, DRAG);
     this.setDamping(true);
     this.setSize(RADIUS * 2, RADIUS * 2);
     this.setCircle(RADIUS);
   }
 
-  public kick(rotation: number, power: number) {
-    this.setVelocity(power * Math.cos(rotation), power * Math.sin(rotation));
+  public kick(vector: Phaser.Math.Vector2, power: number): this {
+    vector.normalize();
+
+    this.setVelocity(vector.x * power, vector.y * power);
+
+    return this;
   }
 
-  public place(x: number, y: number) {
+  public place(x: number, y: number): this {
     this.setVelocity(0, 0);
     this.setAngularVelocity(0);
     this.setPosition(x, y);
+
+    return this;
   }
 
-  public trap() {
+  public trap(): this {
     this.setVelocity(0, 0);
     this.setAngularVelocity(0);
+
+    return this;
   }
 
   public timeToCoverDistance(distance: number, velocity: number): number {
@@ -38,9 +48,9 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     let time = 0;
 
     while (velocity > 0.1 && position < distance) {
-      velocity *= DRAG_DELTA;
-      position += velocity * TIME_DELTA;
-      time += TIME_DELTA;
+      velocity *= Math.pow(this.body.drag.x, DELTA);
+      position += velocity * DELTA;
+      time += DELTA;
 
       if (velocity <= 0.1) {
         time = -1;
@@ -54,11 +64,11 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     const position = this.position.clone();
     const velocity = this.body.velocity.clone();
 
-    for (let i = 0; i < time / TIME_DELTA_MILI; i++) {
-      velocity.x *= DRAG_DELTA;
-      velocity.y *= DRAG_DELTA;
-      position.x += velocity.x * TIME_DELTA;
-      position.y += velocity.y * TIME_DELTA;
+    for (let i = 0; i < time / (DELTA * 1000); i++) {
+      velocity.x *= Math.pow(this.body.drag.x, DELTA);
+      velocity.y *= Math.pow(this.body.drag.y, DELTA);
+      position.x += velocity.x * DELTA;
+      position.y += velocity.y * DELTA;
     }
 
     return position;

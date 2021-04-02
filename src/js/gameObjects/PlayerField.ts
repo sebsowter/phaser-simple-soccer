@@ -6,9 +6,6 @@ import {
   POT_SHOT_CHANCE,
   PASS_THREAT_RADIUS,
   MIN_PASS_DISTANCE,
-  RECEIVING_RANGE,
-  KICKING_RANGE,
-  PLAYER_COMFORT_DISTANCE,
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
 } from "../constants";
@@ -38,6 +35,21 @@ export default class PlayerField extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
+    this.scene.events.on(
+      "pass",
+      function (props: any[]) {
+        const [receiver, target] = props;
+
+        if (receiver === this) {
+          console.log("target", target);
+          this.setTarget(target);
+          this.scene._circle.setPosition(this.target.x, this.target.y);
+          this.setState(PlayerFieldStates.ReceiveBall);
+        }
+      },
+      this
+    );
+
     this.setState(PlayerFieldStates.ReturnToHome);
   }
 
@@ -46,38 +58,51 @@ export default class PlayerField extends PlayerBase {
       case PlayerFieldStates.ReceiveBall:
         this.team.receivingPlayer = null;
         break;
+
       case PlayerFieldStates.SupportAttacker:
         this.team.supportingPlayer = null;
         break;
     }
 
     switch (value) {
+      case PlayerFieldStates.ReceiveBall:
+        this.team.setControllingPlayer(this);
+        this.team.setReceivingPlayer(this);
+
+        console.log("setPosition", this.target);
+        this.scene._circle.setPosition(this.target.x, this.target.y);
+
+        if (
+          this.isInHotPosition ||
+          (Math.random() < 0.5 &&
+            !this.team.isOpponentWithinRadius(
+              this.position,
+              PASS_THREAT_RADIUS
+            ))
+        ) {
+          this.setMode(PlayerModes.Seek);
+        } else {
+          this.setMode(PlayerModes.Seek);
+        }
+        break;
+
       case PlayerFieldStates.ChaseBall:
         this.setMode(PlayerModes.Pursuit);
         break;
-      case PlayerFieldStates.ReceiveBall:
-        break;
+
       case PlayerFieldStates.Dribble:
         this.team.setControllingPlayer(this);
         break;
+
       case PlayerFieldStates.SupportAttacker:
         this.setTarget(this.team.getSupportSpot());
         break;
+
       case PlayerFieldStates.KickBall:
         this.team.setControllingPlayer(this);
-        this.setVelocity(0, 0);
+
         if (!this.isReadyForNextKick) {
           this.setState(PlayerFieldStates.ChaseBall);
-        } else {
-          this.setData({ isReadyForNextKick: false });
-          this.scene.time.delayedCall(
-            250,
-            function () {
-              this.setData({ isReadyForNextKick: true });
-            },
-            [],
-            this
-          );
         }
         break;
 
@@ -87,7 +112,7 @@ export default class PlayerField extends PlayerBase {
         break;
 
       case PlayerFieldStates.Wait:
-        this.setVelocity(0, 0);
+        //this.setVelocity(0, 0);
         if (!this.scene.gameOn) {
           this.setTarget(this.home);
         }
@@ -114,71 +139,67 @@ export default class PlayerField extends PlayerBase {
           this.setState(PlayerFieldStates.ChaseBall);
         } else {
           const powerShot = MAX_SHOT_POWER * dot;
-          const canShoot = this.team.canShoot(
+          const [canShoot, shotTarget] = this.team.canShoot(
             this.scene.ball.position,
             powerShot
           );
 
-          if (canShoot[0] || Math.random() < POT_SHOT_CHANCE) {
+          if (canShoot || Math.random() < POT_SHOT_CHANCE) {
             this.scene.ball.kick(
-              Phaser.Math.Angle.BetweenPoints(this.position, canShoot[1]),
+              shotTarget.clone().subtract(this.scene.ball.position),
               powerShot
             );
             this.team.requestSupport();
+
             this.setState(PlayerFieldStates.Wait);
           } else {
-            const powerPass = MAX_PASS_POWER * dot;
-            const canPass = this.team.findPass(
+            const passPower = MAX_PASS_POWER * dot;
+            const [canPass, receiver, passTarget] = this.team.findPass(
               this,
-              powerPass,
+              passPower,
               MIN_PASS_DISTANCE
             );
 
-            if (this.isThreatened && canPass[0]) {
-              const receiver = canPass[1];
-              const targetPos = canPass[2];
-              const targeAngle = Phaser.Math.Angle.BetweenPoints(
-                this.position,
-                targetPos
+            if (this.isThreatened && canPass) {
+              this.scene.ball.kick(
+                passTarget.clone().subtract(this.scene.ball.position),
+                passPower
               );
 
-              this.scene.ball.kick(targeAngle, powerPass);
-              receiver.receivePass(targetPos);
-              this.setState(PlayerFieldStates.Wait);
+              console.log("----", passTarget);
+              this.scene.events.emit("pass", [receiver, passTarget]);
+
               this.team.requestSupport();
+
+              this.setState(PlayerFieldStates.Wait);
             } else {
               this.setState(PlayerFieldStates.Dribble);
+
               this.team.requestSupport();
             }
           }
         }
+
         break;
 
       case PlayerFieldStates.Dribble:
-        const { facing } = this.team.goalTarget;
-        const goalDot = facing.dot(this.facing);
+        const { facing } = this.team.goalOpp;
+        const goalDot = this.team.goalOpp.facing.dot(this.facing);
 
         // If back to goal kick ball at an angle to turn.
         if (goalDot > 0) {
+          const v = new Phaser.Math.Vector2(1, 0);
           const direction = Math.sign(
             this.facing.y * facing.x - this.facing.x * facing.y
           );
+          const d = this.rotation + direction * (Math.PI / 5);
 
-          this.scene.ball.kick(
-            this.rotation + direction * (Math.PI / 5),
-            DRIBBLE_POWER
-          );
+          this.scene.ball.kick(v.rotate(d), DRIBBLE_POWER);
         }
 
         // Otherwise kick ball towards the goal.
         else {
-          this.scene.ball.kick(
-            Phaser.Math.Angle.BetweenPoints(
-              this.position,
-              this.team.goalTarget.position
-            ),
-            DRIBBLE_POWER_GOAL
-          );
+          this.scene.ball.kick(this.team.goalHome.facing, DRIBBLE_POWER_GOAL);
         }
 
         this.setState(PlayerFieldStates.ChaseBall);
@@ -212,6 +233,9 @@ export default class PlayerField extends PlayerBase {
         break;
 
       case PlayerFieldStates.ReceiveBall:
+        console.log("this.target.x", this.target);
+        this.scene._circle.setPosition(this.target.x, this.target.y);
+
         if (this.isBallWithinReceivingRange || !this.team.isInControl) {
           this.team.setReceivingPlayer(null);
           this.setState(PlayerFieldStates.ChaseBall);
@@ -238,7 +262,7 @@ export default class PlayerField extends PlayerBase {
             this.setTarget(this.position);
             this.setState(PlayerFieldStates.Wait);
           }
-        } else if (this.isAtTarget) {
+        } else if (this.isAtHome) {
           this.setState(PlayerFieldStates.Wait);
         }
         break;
@@ -276,26 +300,29 @@ export default class PlayerField extends PlayerBase {
       this.state === PlayerFieldStates.Wait ||
       this.state === PlayerFieldStates.ReturnToHome
     ) {
-      this.setTarget(target);
+      this.setTarget(this.home);
+      this.setState(PlayerFieldStates.ReturnToHome);
     }
 
     return this;
   }
 
-  public passToRequester(receiver: PlayerField): this {
+  public passToRequester(receiver: PlayerBase): this {
     if (this.team.receivingPlayer || !this.isBallWithinKickingRange) {
-      return;
+      return this;
     }
 
-    this.team.ball.kick(
-      Phaser.Math.Angle.BetweenPoints(
-        this.team.ball.position,
-        receiver.position
-      ),
-      MAX_PASS_POWER
-    );
+    const targetVector = receiver.position
+      .subtract(this.scene.ball.position)
+      .normalize();
+
+    this.team.ball.kick(targetVector, MAX_PASS_POWER);
+
     this.setState(PlayerFieldStates.Wait);
-    receiver.receivePass(receiver.position);
+
+    //console.log('----', passTarget)
+    this.scene.events.emit("pass", [receiver, receiver.position]);
+
     this.team.requestSupport();
 
     return this;
@@ -305,87 +332,5 @@ export default class PlayerField extends PlayerBase {
     this.setState(PlayerFieldStates.SupportAttacker);
 
     return this;
-  }
-
-  public receivePass(target: Phaser.Math.Vector2): this {
-    this.team.setControllingPlayer(this);
-    this.team.setReceivingPlayer(this);
-
-    this.setTarget(target);
-
-    if (
-      this.isInHotPosition ||
-      (Math.random() < 0.5 &&
-        !this.team.isOpponentWithinRadius(this.position, PASS_THREAT_RADIUS))
-    ) {
-      this.setMode(PlayerModes.Seek);
-    } else {
-      this.setMode(PlayerModes.Pursuit);
-    }
-
-    this.setState(PlayerFieldStates.ReceiveBall);
-
-    return this;
-  }
-
-  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
-    return position.subtract(this.position).dot(this.facing) > 0;
-  }
-
-  public get shouldChaseBall(): boolean {
-    return (
-      this.isClosestPlayerToBall &&
-      !this.team.receivingPlayer &&
-      !this.scene.goalkeeperHasBall
-    );
-  }
-
-  public get isThreatened(): boolean {
-    const opponents = this.team.opponents.players;
-
-    for (let i = 0; i < opponents.length; i++) {
-      const opponent = opponents[i];
-
-      if (
-        this.isPositionInFrontOfPlayer(opponent.position) &&
-        this.position.distance(opponent.position) < PLAYER_COMFORT_DISTANCE
-      ) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  public get isAheadOfAttacker(): boolean {
-    const goalX = this.team.goalTarget.position.x;
-
-    return (
-      Math.abs(this.position.x - goalX) <
-      Math.abs(this.team.controllingPlayer.position.x - goalX)
-    );
-  }
-
-  public get isReadyForNextKick(): boolean {
-    return this.getData("isReadyForNextKick");
-  }
-
-  public get isBallWithinReceivingRange(): boolean {
-    return this.position.distance(this.scene.ball.position) < RECEIVING_RANGE;
-  }
-
-  public get isBallWithinKickingRange(): boolean {
-    return this.position.distance(this.scene.ball.position) < KICKING_RANGE;
-  }
-
-  public get isInHotPosition(): boolean {
-    return (
-      Math.abs(this.position.y - this.team.goalTarget.position.y) <
-      this.scene.pitch.width / 3
-    );
-  }
-
-  public get isControllingPlayer(): boolean {
-    return this === this.team.controllingPlayer;
   }
 }

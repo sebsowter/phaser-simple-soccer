@@ -4,8 +4,8 @@ export default class LoaderScene extends Phaser.Scene {
     this.load.image("goal", "./assets/images/goal.png");
     this.load.image("pitch", "./assets/images/pitch.png");
     this.load.spritesheet("sprites", "./assets/images/sprites.png", {
-      frameWidth: 32,
-      frameHeight: 32,
+      frameWidth: 16,
+      frameHeight: 16,
     });
   }
 
@@ -26,21 +26,21 @@ export default class LoaderScene extends Phaser.Scene {
       })
     );
 
-    this.game.events.on(
-      Phaser.Core.Events.BLUR,
-      function () {
-        this.scene.get("game").scene.pause();
-      },
-      this
-    );
-
-    this.game.events.on(
-      Phaser.Core.Events.FOCUS,
-      function () {
-        this.scene.get("game").scene.resume();
-      },
-      this
-    );
+    this.game.events
+      .on(
+        Phaser.Core.Events.BLUR,
+        function () {
+          this.scene.get("game").scene.pause();
+        },
+        this
+      )
+      .on(
+        Phaser.Core.Events.FOCUS,
+        function () {
+          this.scene.get("game").scene.resume();
+        },
+        this
+      );
 
     this.scene.start("game");
   }

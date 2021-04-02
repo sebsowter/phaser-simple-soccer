@@ -1,11 +1,11 @@
 import { PlayerProps } from "../types";
 
-const players: PlayerProps[] = [
+export const players: PlayerProps[] = [
   {
     id: 1,
     name: "Player",
     role: "GK",
-    speed: 4,
+    speed: 3.5,
     strength: 1,
     power: 1,
     toughness: 1,
@@ -15,7 +15,7 @@ const players: PlayerProps[] = [
     id: 2,
     name: "Player",
     role: "DF",
-    speed: 4,
+    speed: 3.5,
     strength: 1,
     power: 1,
     toughness: 1,
@@ -25,7 +25,7 @@ const players: PlayerProps[] = [
     id: 3,
     name: "Player",
     role: "DF",
-    speed: 4,
+    speed: 3.5,
     strength: 1,
     power: 1,
     toughness: 1,
@@ -35,7 +35,7 @@ const players: PlayerProps[] = [
     id: 4,
     name: "Player",
     role: "AT",
-    speed: 4.5,
+    speed: 3.5,
     strength: 1,
     power: 1,
     toughness: 1,
@@ -45,12 +45,10 @@ const players: PlayerProps[] = [
     id: 5,
     name: "Player",
     role: "AT",
-    speed: 5,
+    speed: 3.5,
     strength: 1,
     power: 1,
     toughness: 1,
     accuracy: 1,
   },
 ];
-
-export default players;

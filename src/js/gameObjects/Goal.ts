@@ -81,11 +81,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       Phaser.Physics.Arcade.STATIC_BODY
     );
 
-    this.add(back);
-    this.add(top);
-    this.add(topPost);
-    this.add(bottom);
-    this.add(bottomPost);
+    this.add(back).add(top).add(topPost).add(bottom).add(bottomPost);
   }
 
   public incrementScore() {

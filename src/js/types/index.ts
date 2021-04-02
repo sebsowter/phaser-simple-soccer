@@ -9,9 +9,15 @@ export interface PlayerProps {
   accuracy: number;
 }
 
+export interface Regions {
+  attacking: number[];
+  defending: number[];
+}
+
 export interface TeamProps {
   id: number;
   frame: number;
   name: string;
   players: number[];
+  regions: Regions;
 }

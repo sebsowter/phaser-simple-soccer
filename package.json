@@ -1,7 +1,7 @@
 {
   "name": "phaser-simple-soccer",
   "version": "1.0.0",
-  "description": "Phaser Football",
+  "description": "Phaser Simple Soccer",
   "main": "src/js/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

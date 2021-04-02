@@ -1,6 +1,6 @@
-import { MAX_PASS_POWER, Players, Teams } from "../constants";
+import { MAX_PASS_POWER, players, teams } from "../constants";
 import { getRegionPos } from "../utils";
-import { PlayerProps, TeamProps } from "../types";
+import { PlayerProps, Regions, TeamProps } from "../types";
 import { GameScene } from "../scenes";
 import {
   SupportSpots,
@@ -22,65 +22,64 @@ export default class Team extends Phaser.GameObjects.Group {
   public scene: GameScene;
   public state: TeamStates;
 
+  private _spots: SupportSpots;
+  private _isLeft: boolean;
+  private _pitch: GameScene;
+  private _regions: Regions;
+  private _players: PlayerBase[];
+  private _opponents: Team;
+  private _goalHome: Goal;
+  private _goalOpp: Goal;
   private _supportingPlayer: PlayerBase = null;
   private _controllingPlayer: PlayerBase = null;
   private _receivingPlayer: PlayerBase = null;
   private _closestPlayer: PlayerBase = null;
-  private _spots: SupportSpots;
-  private _isLeft: boolean;
-  private _regions: any;
-  private _players: PlayerBase[];
-  private _opponents: Team;
-  private _goalHome: Goal;
-  private _goalTarget: Goal;
 
   constructor(
     scene: Phaser.Scene,
     teamId: number,
     isLeft: boolean,
-    goalTarget: Goal,
-    goalHome: Goal,
-    regions: any
+    goalOpp: Goal,
+    goalHome: Goal
   ) {
     super(scene);
 
     this.scene.add.existing(this);
 
-    this._goalTarget = goalTarget;
+    const team: TeamProps = teams.find((team: TeamProps) => team.id === teamId);
+
+    this._pitch = this.scene;
+    this._goalOpp = goalOpp;
     this._goalHome = goalHome;
     this._isLeft = isLeft;
-    this._regions = regions;
+    this._regions = team.regions;
+    this._spots = new SupportSpots(this.scene, this, isLeft);
+    this._players = team.players
+      .map((id: number) => {
+        return players.find((player: PlayerProps) => player.id === id);
+      })
+      .map((props: PlayerProps, index: number) => {
+        const PlayerEntity = props.role === "GK" ? PlayerKeeper : PlayerField;
+        const position = getRegionPos(this._regions.defending[index]);
 
-    const team: TeamProps = Teams.find((team: TeamProps) => team.id === teamId);
+        return new PlayerEntity(
+          this.scene,
+          position.x + (-16 + Math.random() * 32),
+          position.y + (-16 + Math.random() * 32),
+          team.frame,
+          props,
+          index,
+          team.name,
+          position,
+          this
+        );
+      });
 
-    this.setName(team.name);
-
-    const players: PlayerProps[] = team.players.map((id: number) =>
-      Players.find((player: PlayerProps) => player.id === id)
-    );
-
-    this._players = players.map((props: PlayerProps, index: number) => {
-      const PlayerEntity = props.role === "GK" ? PlayerKeeper : PlayerField;
-      const position = getRegionPos(this._regions.defending[index]);
-      const player = new PlayerEntity(
-        this.scene,
-        position.x,
-        position.y,
-        team.frame,
-        props,
-        index,
-        team.name,
-        position,
-        this
-      );
-
+    this._players.forEach((player: PlayerBase) => {
       this.add(player);
-
-      return player;
     });
 
-    this._spots = new SupportSpots(this.scene, this, isLeft);
-
+    this.setName(team.name);
     this.setState(TeamStates.PrepareForKickOff);
   }
 
@@ -93,11 +92,13 @@ export default class Team extends Phaser.GameObjects.Group {
           this.setState(TeamStates.Defending);
         }
         break;
+
       case TeamStates.Defending:
         if (this.isInControl) {
           this.setState(TeamStates.Attacking);
         }
         break;
+
       case TeamStates.Attacking:
         if (!this.isInControl) {
           this.setState(TeamStates.Defending);
@@ -124,9 +125,11 @@ export default class Team extends Phaser.GameObjects.Group {
         this.updateTargets(value);
         this.returnAllToHome();
         break;
+
       case TeamStates.Defending:
         this.updateTargets(value);
         break;
+
       case TeamStates.Attacking:
         this.updateTargets(value);
         this.setSupportingPlayer(this.calculateSupportingPlayer());
@@ -159,9 +162,8 @@ export default class Team extends Phaser.GameObjects.Group {
     const region = state === TeamStates.Attacking ? attacking : defending;
 
     this.players.forEach((player: PlayerBase, index: number) => {
-      player
-        .setHome(getRegionPos(region[index]))
-        .returnHomeIfWaiting(player.home);
+      player.setHome(getRegionPos(region[index]));
+      //.returnHomeIfWaiting(player.home);
     });
   }
 
@@ -170,14 +172,12 @@ export default class Team extends Phaser.GameObjects.Group {
     power: number,
     attempts: number = 3
   ): any[] {
-    const target = this.goalTarget.position.clone();
-    const targetHeght = this.goalTarget.height - this.ball.height;
+    const target = this.goalOpp.position.clone();
+    const targetHeght = this.goalOpp.height - this.ball.height;
 
     while (attempts--) {
       target.y =
-        this.goalTarget.position.y -
-        targetHeght / 2 +
-        Math.random() * targetHeght;
+        this.goalOpp.position.y - targetHeght / 2 + Math.random() * targetHeght;
 
       if (
         this.ball.timeToCoverDistance(position.distance(target), power) >= 0 &&
@@ -194,8 +194,7 @@ export default class Team extends Phaser.GameObjects.Group {
     receiver: PlayerBase,
     power: number
   ): Phaser.Math.Vector2 {
-    const position = this.ball.position;
-    const distance = position.distance(receiver.position);
+    const distance = this.ball.position.distance(receiver.position);
     const time = this.ball.timeToCoverDistance(distance, power);
 
     if (time <= 0) {
@@ -204,25 +203,36 @@ export default class Team extends Phaser.GameObjects.Group {
 
     const interceptRange = receiver.speedPerSecond * time;
     const passAngle = Phaser.Math.Angle.BetweenPoints(
-      position,
+      this.ball.position,
       receiver.position
     );
     const passRotation = Math.sin(interceptRange / distance);
     const passLocal = new Phaser.Math.Vector2(distance, 0).rotate(passAngle);
-    const passLeft = passLocal.clone().rotate(-passRotation).add(position);
-    const passRight = passLocal.clone().rotate(passRotation).add(position);
+    const passLeft = passLocal
+      .clone()
+      .rotate(-passRotation)
+      .add(this.ball.position);
+    const passRight = passLocal
+      .clone()
+      .rotate(passRotation)
+      .add(this.ball.position);
 
     let closest = 10000;
     let passTarget = null;
 
     [passLeft, receiver.position, passRight].forEach(
       (pass: Phaser.Math.Vector2) => {
-        const distance = Math.abs(pass.x - this.goalTarget.position.x);
+        const distance = Math.abs(pass.x - this.goalOpp.position.x);
 
         if (
           distance < closest &&
           this.scene.pitch.contains(pass.x, pass.y) &&
-          this.isPassSafeFromAllOpponents(position, pass, receiver, power)
+          this.isPassSafeFromAllOpponents(
+            this.ball.position,
+            pass,
+            receiver,
+            power
+          )
         ) {
           closest = distance;
           passTarget = pass;
@@ -242,24 +252,25 @@ export default class Team extends Phaser.GameObjects.Group {
     let target = null;
     let receiver = null;
 
-    this.players.forEach((player: PlayerBase) => {
-      if (
-        player !== passer &&
-        passer.position.distance(player.position) > minimumPassingDistance
-      ) {
-        const pass = this.getBestPassToReceiver(player, power);
+    this.players
+      .filter((player: PlayerBase) => player !== passer)
+      .forEach((player: PlayerBase) => {
+        const distance = passer.position.distance(player.position);
 
-        if (pass) {
-          const distance = Math.abs(pass.x - this.goalTarget.position.x);
+        if (distance > minimumPassingDistance) {
+          const pass = this.getBestPassToReceiver(player, power);
 
-          if (distance < closestToGoalSoFar) {
-            closestToGoalSoFar = distance;
-            receiver = player;
-            target = pass;
+          if (pass) {
+            const distance = Math.abs(pass.x - this.goalOpp.position.x);
+
+            if (distance < closestToGoalSoFar) {
+              closestToGoalSoFar = distance;
+              receiver = player;
+              target = pass;
+            }
           }
         }
-      }
-    });
+      });
 
     if (receiver) return [true, receiver, target];
     else return [false, null, null];
@@ -440,6 +451,10 @@ export default class Team extends Phaser.GameObjects.Group {
     return this.players.every((player: PlayerBase) => player.isAtHome);
   }
 
+  public get pitch(): GameScene {
+    return this._pitch;
+  }
+
   public get ball(): Ball {
     return this.scene.ball;
   }
@@ -456,8 +471,8 @@ export default class Team extends Phaser.GameObjects.Group {
     return this._isLeft;
   }
 
-  public get goalTarget(): Goal {
-    return this._goalTarget;
+  public get goalOpp(): Goal {
+    return this._goalOpp;
   }
 
   public get goalHome(): Goal {

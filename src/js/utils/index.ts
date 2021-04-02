@@ -1,4 +1,4 @@
-const setText = (selector: string, value: string): void => {
+const setText = (selector: string, value: string) => {
   document.querySelector(selector).innerHTML = value;
 };
 

@@ -1,8 +1,15 @@
 import GameScene from "../scenes/GameScene";
-import Team from "./Team";
 import { PlayerProps } from "../types";
-import { TIME_DELTA_MILI } from "../constants";
-import Info from "./Info";
+import {
+  DELTA,
+  PLAYER_COMFORT_DISTANCE,
+  RECEIVING_RANGE,
+  KICKING_RANGE,
+  KEEPER_RANGE,
+  INTERCEPT_RANGE,
+} from "../constants";
+import { Info, Team } from "./";
+import Regulator from "./Regulator";
 
 export enum PlayerModes {
   Track,
@@ -15,9 +22,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public scene: GameScene;
   public body: Phaser.Physics.Arcade.Body;
 
+  private _team: Team;
   private _home: Phaser.Math.Vector2;
   private _target: Phaser.Math.Vector2;
-  private _team: Team;
+  private _regulator: Regulator;
 
   constructor(
     scene: Phaser.Scene,
@@ -30,23 +38,25 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     home: Phaser.Math.Vector2,
     team: Team
   ) {
+    const RADIUS = 8;
+
     super(scene, x, y, "sprites", frame);
 
     this._home = home;
     this._team = team;
+    this._regulator = new Regulator(this.scene);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.setData(props);
     this.setData({
-      name,
+      ...props,
       index,
-      isReadyForNextKick: true,
       mode: PlayerModes.Track,
     });
-    this.setSize(16, 16);
-    this.setCircle(8);
+    this.setName(name);
+    this.setSize(RADIUS * 2, RADIUS * 2);
+    this.setCircle(RADIUS);
     this.setDepth(3);
 
     const info = new Info(this.scene, index, team.isLeft);
@@ -63,6 +73,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public preUpdate(time: number, delta: number) {
     const [speed, mode] = this.getData(["speed", "mode"]);
+    const ballAngle = Phaser.Math.Angle.BetweenPoints(
+      this.position,
+      this.scene.ball.position
+    );
 
     switch (mode) {
       case PlayerModes.Pursuit:
@@ -71,19 +85,14 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           .clone()
           .subtract(this.position)
           .length();
-
-        let lookAheadTime = 0;
-
-        if (ballSpeed !== 0) {
-          lookAheadTime = magnitude / ballSpeed;
-        }
+        const lookAheadTime = ballSpeed !== 0 ? magnitude / ballSpeed : 0;
 
         this.setTarget(this.scene.ball.futurePosition(lookAheadTime));
 
       case PlayerModes.Seek:
         const targetAngle = Phaser.Math.Angle.BetweenPoints(
           this.position,
-          this._target
+          this.target
         );
 
         this.setRotation(targetAngle);
@@ -94,52 +103,74 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         break;
 
       case PlayerModes.Track:
-        this.setVelocity(0, 0);
-        this.setRotation(
-          Phaser.Math.Angle.BetweenPoints(
-            this.position,
-            this.scene.ball.position
-          )
-        );
-        break;
-
-      case PlayerModes.Interpose:
-        const targetAn = Phaser.Math.Angle.BetweenPoints(
+        const angle = Phaser.Math.Angle.BetweenPoints(
           this.position,
           this.scene.ball.position
         );
 
+        this.setVelocity(0, 0);
+        this.setRotation(angle);
+        break;
+
+      case PlayerModes.Interpose:
         this.setTarget(this.rearInterposeTarget);
 
-        const distance = this.position.distance(this._target);
-
-        var temp1 = new Phaser.Math.Vector2(
-          this.scene.ball.position.x - this._target.x,
-          this.scene.ball.position.y - this._target.y
+        const targetDistance = this.position.distance(this.target);
+        const temp1 = new Phaser.Math.Vector2(
+          this.scene.ball.position.x - this.target.x,
+          this.scene.ball.position.y - this.target.y
         ).normalize();
-        var temp2 = new Phaser.Math.Vector2(
-          this._target.x + temp1.x * distance,
-          this._target.y + temp1.y * distance
+        const temp2 = new Phaser.Math.Vector2(
+          this.target.x + temp1.x * targetDistance,
+          this.target.y + temp1.y * targetDistance
         );
-
-        const targetAngle2 = Phaser.Math.Angle.BetweenPoints(
+        const interposeAngle = Phaser.Math.Angle.BetweenPoints(
           this.position,
           temp2
         );
 
-        this.setRotation(targetAn);
-        this.setVelocity(
-          speed * delta * Math.cos(targetAngle2),
-          speed * delta * Math.sin(targetAngle2)
-        );
+        if (interposeAngle !== 0) {
+          this.setVelocity(
+            speed * delta * Math.cos(interposeAngle),
+            speed * delta * Math.sin(interposeAngle)
+          );
+        } else {
+          this.setVelocity(0, 0);
+        }
+
+        this.setRotation(ballAngle);
         break;
     }
   }
 
-  public setMode(value: PlayerModes): this {
-    this.setData({ mode: value });
+  public setMode(mode: PlayerModes): this {
+    this.setData({ mode });
 
     return this;
+  }
+
+  public setTarget(vector: Phaser.Math.Vector2): this {
+    this._target = vector;
+
+    return this;
+  }
+
+  public setHome(vector: Phaser.Math.Vector2): this {
+    this._home = vector;
+
+    return this;
+  }
+
+  public isCloseToHome(epsilon: number = 10): boolean {
+    return this.position.fuzzyEquals(this.home, epsilon);
+  }
+
+  public isCloseToTarget(epsilon: number = 10): boolean {
+    return this.position.fuzzyEquals(this.target, epsilon);
+  }
+
+  public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
+    return position.clone().subtract(this.position).dot(this.facing) > 0;
   }
 
   public support(): this {
@@ -150,24 +181,32 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
-  public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
+  public returnHomeIfWaiting(target?: Phaser.Math.Vector2): this {
     return this;
   }
 
-  public passToRequester(receiver: PlayerBase): this {
+  public passToRequester(receiver?: PlayerBase): this {
     return this;
   }
 
-  public isCloseToHome(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this._home, epsilon);
+  public get speedPerFrame(): number {
+    return this.getData("speed");
   }
 
-  public isCloseToTarget(epsilon: number = 10): boolean {
-    return this.position.fuzzyEquals(this._target, epsilon);
+  public get mode(): number {
+    return this.getData("mode");
   }
 
-  public inHomeRegion(): boolean {
-    return this.isCloseToHome(96);
+  public get index(): number {
+    return this.getData("index");
+  }
+
+  public get isReadyForNextKick(): boolean {
+    return this._regulator.isReady;
+  }
+
+  public get role(): string {
+    return this.getData("role");
   }
 
   public get isAtHome(): boolean {
@@ -178,20 +217,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this.isCloseToTarget();
   }
 
-  public setTarget(value: Phaser.Math.Vector2): this {
-    this._target = value;
-
-    return this;
-  }
-
   public get target(): Phaser.Math.Vector2 {
     return this._target;
-  }
-
-  public setHome(value: Phaser.Math.Vector2): this {
-    this._home = value;
-
-    return this;
   }
 
   public get home(): Phaser.Math.Vector2 {
@@ -200,10 +227,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get team(): Team {
     return this._team;
-  }
-
-  public get isControllingPlayer(): boolean {
-    return false;
   }
 
   public get position(): Phaser.Math.Vector2 {
@@ -215,31 +238,83 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get speedPerSecond(): number {
-    return this.speedPerFrame * TIME_DELTA_MILI;
+    return this.speedPerFrame * DELTA * 1000;
   }
 
-  public get speedPerFrame(): number {
-    return this.getData("speed");
+  public get isControllingPlayer(): boolean {
+    return this === this.team.controllingPlayer;
   }
 
-  public get index(): number {
-    return this.getData("index");
-  }
-
-  public get isReadyForNextKick(): boolean {
-    return this.getData("isReadyForNextKick");
-  }
-
-  public get role(): string {
-    return this.getData("role");
+  public get isClosestPlayerToBall(): boolean {
+    return this === this.team.closestPlayer;
   }
 
   public get isClosestPlayerOnPitchToBall(): boolean {
     return this === this.team.closestPlayerOnPitchToBall;
   }
 
-  public get isClosestPlayerToBall(): boolean {
-    return this === this.team.closestPlayer;
+  public get isBallWithinReceivingRange(): boolean {
+    return this.position.distance(this.scene.ball.position) < RECEIVING_RANGE;
+  }
+
+  public get isBallWithinKickingRange(): boolean {
+    return this.position.distance(this.scene.ball.position) < KICKING_RANGE;
+  }
+
+  public get isBallWithinKeeperRange(): boolean {
+    return this.position.distance(this.scene.ball.position) < KEEPER_RANGE;
+  }
+
+  public get isBallWithinRangeForIntercept(): boolean {
+    return (
+      this.team.goalHome.position.distance(this.scene.ball.position) <=
+      INTERCEPT_RANGE
+    );
+  }
+
+  public get isTooFarFromGoalMouth(): boolean {
+    return this.position.distance(this.rearInterposeTarget) > INTERCEPT_RANGE;
+  }
+
+  public get isThreatened(): boolean {
+    const opponents = this.team.opponents.players;
+
+    for (let i = 0; i < opponents.length; i++) {
+      const opponent = opponents[i];
+
+      if (
+        this.isPositionInFrontOfPlayer(opponent.position) &&
+        this.position.distance(opponent.position) < PLAYER_COMFORT_DISTANCE
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public get isAheadOfAttacker(): boolean {
+    const goalX = this.team.goalOpp.position.x;
+
+    return (
+      Math.abs(this.position.x - goalX) <
+      Math.abs(this.team.controllingPlayer.position.x - goalX)
+    );
+  }
+
+  public get isInHotPosition(): boolean {
+    return (
+      Math.abs(this.position.y - this.team.goalOpp.position.y) <
+      this.scene.pitch.width / 3
+    );
+  }
+
+  public get shouldChaseBall(): boolean {
+    return (
+      this.isClosestPlayerToBall &&
+      !this.team.receivingPlayer &&
+      !this.scene.goalkeeperHasBall
+    );
   }
 
   public get rearInterposeTarget(): Phaser.Math.Vector2 {

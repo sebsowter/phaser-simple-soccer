@@ -1,12 +1,6 @@
 import { PlayerProps } from "../types";
-import {
-  MAX_PASS_POWER,
-  MIN_PASS_DISTANCE,
-  INTERCEPT_RANGE,
-  KEEPER_RANGE,
-} from "../constants";
-import Team from "./Team";
-import PlayerBase, { PlayerModes } from "./PlayerBase";
+import { MAX_PASS_POWER, MIN_PASS_DISTANCE } from "../constants";
+import { Team, PlayerBase, PlayerModes } from "./";
 
 export enum PlayerKeeperStates {
   TendGoal,
@@ -63,7 +57,16 @@ export default class PlayerKeeper extends PlayerBase {
         break;
     }
 
-    return super.setState(value);
+    super.setState(value);
+
+    return this;
+  }
+
+  public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
+    this.setTarget(this.home);
+    this.setState(PlayerKeeperStates.ReturnToHome);
+
+    return this;
   }
 
   public preUpdate(time: number, delta: number) {
@@ -88,33 +91,31 @@ export default class PlayerKeeper extends PlayerBase {
         break;
 
       case PlayerKeeperStates.ReturnToHome:
-        if (this.isAtHome || !this.team.isInControl) {
+        if (this.isAtHome || this.team.opponents.isInControl) {
           this.setState(PlayerKeeperStates.TendGoal);
         }
         break;
 
       case PlayerKeeperStates.PutBallBackInPlay:
-        const canPass = this.team.findPass(
+        const [canPass, receiver, targetPos] = this.team.findPass(
           this,
           MAX_PASS_POWER,
           MIN_PASS_DISTANCE
         );
 
-        if (canPass[0]) {
-          const receiver = canPass[1];
-          const targetPos = canPass[2];
-          const targetAngle = Phaser.Math.Angle.BetweenPoints(
-            this.position,
-            targetPos
+        if (canPass) {
+          console.log("targetPos1", targetPos);
+          this.scene.ball.kick(
+            targetPos.clone().subtract(this.scene.ball.position),
+            MAX_PASS_POWER
           );
-
-          this.scene.ball.kick(targetAngle, MAX_PASS_POWER);
           this.scene.setGoalkeeperHasBall(false);
+          console.log("targetPos2", targetPos);
+          this.scene.events.emit("pass", [receiver, targetPos]);
 
-          this.setMode(PlayerModes.Track);
           this.setState(PlayerKeeperStates.TendGoal);
-
-          receiver.receivePass(targetPos);
+        } else {
+          this.setVelocity(0, 0);
         }
         break;
 
@@ -124,6 +125,7 @@ export default class PlayerKeeper extends PlayerBase {
         } else if (this.isBallWithinKeeperRange) {
           this.scene.ball.trap();
           this.scene.setGoalkeeperHasBall(true);
+
           this.setState(PlayerKeeperStates.PutBallBackInPlay);
         }
         break;
@@ -143,21 +145,6 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public get isAtHome(): boolean {
-    return !this.isTooFarFromGoalMouth;
-  }
-
-  public get isBallWithinKeeperRange(): boolean {
-    return this.position.distance(this.scene.ball.position) < KEEPER_RANGE;
-  }
-
-  public get isBallWithinRangeForIntercept(): boolean {
-    return (
-      this.team.goalHome.position.distance(this.scene.ball.position) <=
-      INTERCEPT_RANGE
-    );
-  }
-
-  public get isTooFarFromGoalMouth(): boolean {
-    return this.position.distance(this.rearInterposeTarget) > INTERCEPT_RANGE;
+    return this.isCloseToHome(64);
   }
 }
