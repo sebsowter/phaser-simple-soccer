@@ -1,6 +1,6 @@
 import { MAX_PASS_POWER, players, teams } from "../constants";
 import { getRegionPos } from "../utils";
-import { PlayerProps, Regions, TeamProps } from "../types";
+import { PlayerProps, Regions, TeamProps, PlayerRoles } from "../types";
 import { GameScene } from "../scenes";
 import {
   SupportSpots,
@@ -24,7 +24,6 @@ export default class Team extends Phaser.GameObjects.Group {
 
   private _spots: SupportSpots;
   private _isLeft: boolean;
-  private _pitch: GameScene;
   private _regions: Regions;
   private _players: PlayerBase[];
   private _opponents: Team;
@@ -48,7 +47,6 @@ export default class Team extends Phaser.GameObjects.Group {
 
     const team: TeamProps = teams.find((team: TeamProps) => team.id === teamId);
 
-    this._pitch = this.scene;
     this._goalOpp = goalOpp;
     this._goalHome = goalHome;
     this._isLeft = isLeft;
@@ -59,7 +57,8 @@ export default class Team extends Phaser.GameObjects.Group {
         return players.find((player: PlayerProps) => player.id === id);
       })
       .map((props: PlayerProps, index: number) => {
-        const PlayerEntity = props.role === "GK" ? PlayerKeeper : PlayerField;
+        const PlayerEntity =
+          props.role === PlayerRoles.Goalkeeper ? PlayerKeeper : PlayerField;
         const position = getRegionPos(this._regions.defending[index]);
 
         return new PlayerEntity(
@@ -83,12 +82,47 @@ export default class Team extends Phaser.GameObjects.Group {
     this.setState(TeamStates.PrepareForKickOff);
   }
 
-  public preUpdate(): void {
-    this.setClosestPlayer();
+  public setState(state: TeamStates): this {
+    switch (this.state) {
+      case TeamStates.PrepareForKickOff:
+        this.scene.setGameOn(true);
+        break;
+      case TeamStates.Attacking:
+        this.setSupportingPlayer(null);
+        break;
+    }
+
+    this.state = state;
+
+    switch (state) {
+      case TeamStates.PrepareForKickOff:
+        this.setControllingPlayer(null);
+        this.setClosestPlayer(null);
+        this.setSupportingPlayer(null);
+        this.setReceivingPlayer(null);
+        this.sendFieldPlayersToHome();
+        break;
+
+      case TeamStates.Defending:
+        this.updateHomeTargets(state);
+        this.updateTargetsOfWaitingPlayers();
+        break;
+
+      case TeamStates.Attacking:
+        this.updateHomeTargets(state);
+        this.updateTargetsOfWaitingPlayers();
+        break;
+    }
+
+    return this;
+  }
+
+  public preUpdate() {
+    this.setClosestPlayer(this.findClosestPlayer());
 
     switch (this.state) {
       case TeamStates.PrepareForKickOff:
-        if (this.isAllPlayersHome && this.opponents.isAllPlayersHome) {
+        if (this.allPlayersAtHome && this.opponents.allPlayersAtHome) {
           this.setState(TeamStates.Defending);
         }
         break;
@@ -107,64 +141,33 @@ export default class Team extends Phaser.GameObjects.Group {
     }
   }
 
-  public setState(value: number): this {
-    switch (this.state) {
-      case TeamStates.Attacking:
-        this.setSupportingPlayer(null);
-        break;
-    }
-
-    this.state = value;
-
-    switch (value) {
-      case TeamStates.PrepareForKickOff:
-        this._closestPlayer = null;
-        this._controllingPlayer = null;
-        this._receivingPlayer = null;
-        this.setSupportingPlayer(null);
-        this.updateTargets(value);
-        this.returnAllToHome();
-        break;
-
-      case TeamStates.Defending:
-        this.updateTargets(value);
-        break;
-
-      case TeamStates.Attacking:
-        this.updateTargets(value);
-        this.setSupportingPlayer(this.calculateSupportingPlayer());
-        break;
-    }
-
-    return this;
-  }
-
   public kickOff() {
     this.setState(TeamStates.PrepareForKickOff);
   }
 
-  public returnAllToHome() {
-    this.players.forEach((player: PlayerBase) => {
-      player.returnHome();
-    });
-  }
-
   public sendFieldPlayersToHome() {
-    this.players.forEach((player: PlayerBase) => {
-      if (player.role !== "GK") {
-        player.returnHome();
-      }
-    });
+    this.players
+      .filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
+      .forEach((player: PlayerBase) => {
+        this.scene.events.emit("goHome", player);
+      });
   }
 
-  public updateTargets(state: number) {
+  public updateHomeTargets(state: number) {
     const { defending, attacking } = this._regions;
     const region = state === TeamStates.Attacking ? attacking : defending;
 
     this.players.forEach((player: PlayerBase, index: number) => {
       player.setHome(getRegionPos(region[index]));
-      //.returnHomeIfWaiting(player.home);
     });
+  }
+
+  public updateTargetsOfWaitingPlayers() {
+    this.players
+      .filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
+      .forEach((player: PlayerBase) => {
+        player.updateHomeIfWaiting();
+      });
   }
 
   public canShoot(
@@ -201,13 +204,10 @@ export default class Team extends Phaser.GameObjects.Group {
       return null;
     }
 
-    const interceptRange = receiver.speedPerSecond * time;
-    const passAngle = Phaser.Math.Angle.BetweenPoints(
-      this.ball.position,
-      receiver.position
+    const passRotation = Math.sin((receiver.speedPerSecond * time) / distance);
+    const passLocal = new Phaser.Math.Vector2(distance, 0).rotate(
+      Phaser.Math.Angle.BetweenPoints(this.ball.position, receiver.position)
     );
-    const passRotation = Math.sin(interceptRange / distance);
-    const passLocal = new Phaser.Math.Vector2(distance, 0).rotate(passAngle);
     const passLeft = passLocal
       .clone()
       .rotate(-passRotation)
@@ -272,8 +272,11 @@ export default class Team extends Phaser.GameObjects.Group {
         }
       });
 
-    if (receiver) return [true, receiver, target];
-    else return [false, null, null];
+    if (receiver) {
+      return [true, receiver, target];
+    }
+
+    return [false, null, null];
   }
 
   public requestPass(player: PlayerBase) {
@@ -286,19 +289,7 @@ export default class Team extends Phaser.GameObjects.Group {
       )
     ) {
       this.controllingPlayer.passToRequester(player);
-    }
-  }
-
-  public requestSupport() {
-    const supportingPlayer = this.calculateSupportingPlayer();
-
-    if (supportingPlayer) {
-      if (
-        !this.supportingPlayer ||
-        supportingPlayer !== this.supportingPlayer
-      ) {
-        this.setSupportingPlayer(supportingPlayer);
-      }
+      this.scene.events.emit("passMe", player);
     }
   }
 
@@ -306,16 +297,20 @@ export default class Team extends Phaser.GameObjects.Group {
     let closest = 100000;
     let bestPlayer = null;
 
-    this.players.forEach((player: PlayerBase) => {
-      if (player.role === "AT" && !player.isControllingPlayer) {
+    this.players
+      .filter((player: PlayerBase) => {
+        return (
+          player.role === PlayerRoles.Attack && !player.isControllingPlayer
+        );
+      })
+      .forEach((player: PlayerBase) => {
         const distance = player.position.distance(this._spots.supportSpot);
 
         if (distance < closest) {
           closest = distance;
           bestPlayer = player;
         }
-      }
-    });
+      });
 
     return bestPlayer;
   }
@@ -385,7 +380,7 @@ export default class Team extends Phaser.GameObjects.Group {
     return true;
   }
 
-  public setClosestPlayer() {
+  public findClosestPlayer(): PlayerBase {
     let closestPlayer = this.players[0];
 
     this.players.forEach((player: PlayerBase) => {
@@ -397,14 +392,19 @@ export default class Team extends Phaser.GameObjects.Group {
       }
     });
 
+    return closestPlayer;
+  }
+
+  public setClosestPlayer(closestPlayer: PlayerBase) {
     this._closestPlayer = closestPlayer;
   }
 
   public setControllingPlayer(player: PlayerBase) {
     this._controllingPlayer = player;
-    this.opponents.controllingPlayer = null;
-    this.setReceivingPlayer(null);
-    this.setSupportingPlayer(null);
+
+    if (this.opponents) {
+      this.opponents.controllingPlayer = null;
+    }
   }
 
   public setReceivingPlayer(player: PlayerBase) {
@@ -412,15 +412,7 @@ export default class Team extends Phaser.GameObjects.Group {
   }
 
   public setSupportingPlayer(player: PlayerBase) {
-    if (this.supportingPlayer) {
-      this.supportingPlayer.returnHome();
-    }
-
     this._supportingPlayer = player;
-
-    if (this.supportingPlayer) {
-      this.supportingPlayer.support();
-    }
   }
 
   public setOpponents(team: Team) {
@@ -447,12 +439,8 @@ export default class Team extends Phaser.GameObjects.Group {
     return !!this.controllingPlayer;
   }
 
-  public get isAllPlayersHome(): boolean {
+  public get allPlayersAtHome(): boolean {
     return this.players.every((player: PlayerBase) => player.isAtHome);
-  }
-
-  public get pitch(): GameScene {
-    return this._pitch;
   }
 
   public get ball(): Ball {

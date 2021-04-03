@@ -23,10 +23,34 @@ export default class PlayerKeeper extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
+    this.scene.events.on(
+      "pass",
+      function (props: any[]) {
+        const [receiver, target] = props;
+
+        if (receiver === this) {
+          this.setState(PlayerKeeperStates.InterceptBall);
+        }
+      },
+      this
+    );
+
+    this.scene.events.on(
+      "goHome",
+      function (player: PlayerBase) {
+        if (player === this) {
+          this.setDefaultHomeRegion();
+          this.setState(PlayerKeeperStates.ReturnToHome);
+        }
+      },
+      this
+    );
+
     this.setState(PlayerKeeperStates.ReturnToHome);
   }
 
-  public setState(value: PlayerKeeperStates): this {
+  public setState(state: PlayerKeeperStates): this {
+    // Exit state.
     switch (this.state) {
       case PlayerKeeperStates.TendGoal:
       case PlayerKeeperStates.ReturnToHome:
@@ -35,7 +59,8 @@ export default class PlayerKeeper extends PlayerBase {
         break;
     }
 
-    switch (value) {
+    // Enter state.
+    switch (state) {
       case PlayerKeeperStates.TendGoal:
         this.setMode(PlayerModes.Interpose);
         this.setTarget(this.rearInterposeTarget);
@@ -57,21 +82,13 @@ export default class PlayerKeeper extends PlayerBase {
         break;
     }
 
-    super.setState(value);
-
-    return this;
-  }
-
-  public returnHomeIfWaiting(target: Phaser.Math.Vector2): this {
-    this.setTarget(this.home);
-    this.setState(PlayerKeeperStates.ReturnToHome);
-
-    return this;
+    return super.setState(state);
   }
 
   public preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
 
+    // Execute state.
     switch (this.state) {
       case PlayerKeeperStates.TendGoal:
         this.setTarget(this.rearInterposeTarget);
@@ -104,15 +121,12 @@ export default class PlayerKeeper extends PlayerBase {
         );
 
         if (canPass) {
-          console.log("targetPos1", targetPos);
           this.scene.ball.kick(
             targetPos.clone().subtract(this.scene.ball.position),
             MAX_PASS_POWER
           );
           this.scene.setGoalkeeperHasBall(false);
-          console.log("targetPos2", targetPos);
           this.scene.events.emit("pass", [receiver, targetPos]);
-
           this.setState(PlayerKeeperStates.TendGoal);
         } else {
           this.setVelocity(0, 0);
@@ -125,23 +139,10 @@ export default class PlayerKeeper extends PlayerBase {
         } else if (this.isBallWithinKeeperRange) {
           this.scene.ball.trap();
           this.scene.setGoalkeeperHasBall(true);
-
           this.setState(PlayerKeeperStates.PutBallBackInPlay);
         }
         break;
     }
-  }
-
-  public returnHome(): this {
-    this.setState(PlayerKeeperStates.ReturnToHome);
-
-    return this;
-  }
-
-  public receivePass(): this {
-    this.setState(PlayerKeeperStates.InterceptBall);
-
-    return this;
   }
 
   public get isAtHome(): boolean {

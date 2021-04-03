@@ -9,5 +9,5 @@ export const KICKING_RANGE = 20;
 export const PLAYER_COMFORT_DISTANCE = 96;
 export const DRIBBLE_POWER = 48;
 export const DRIBBLE_POWER_GOAL = 96;
-export const INTERCEPT_RANGE = 192;
+export const INTERCEPT_RANGE = 256;
 export const KEEPER_RANGE = 20;

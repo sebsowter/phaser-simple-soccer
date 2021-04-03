@@ -88,7 +88,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     if (this.scene.gameOn) {
       this._scored++;
 
-      this.scene.reset();
+      //this.scene.reset();
     }
   }
 

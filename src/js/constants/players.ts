@@ -1,10 +1,10 @@
-import { PlayerProps } from "../types";
+import { PlayerProps, PlayerRoles } from "../types";
 
 export const players: PlayerProps[] = [
   {
     id: 1,
     name: "Player",
-    role: "GK",
+    role: PlayerRoles.Goalkeeper,
     speed: 3.5,
     strength: 1,
     power: 1,
@@ -14,7 +14,7 @@ export const players: PlayerProps[] = [
   {
     id: 2,
     name: "Player",
-    role: "DF",
+    role: PlayerRoles.Defence,
     speed: 3.5,
     strength: 1,
     power: 1,
@@ -24,7 +24,7 @@ export const players: PlayerProps[] = [
   {
     id: 3,
     name: "Player",
-    role: "DF",
+    role: PlayerRoles.Defence,
     speed: 3.5,
     strength: 1,
     power: 1,
@@ -34,7 +34,7 @@ export const players: PlayerProps[] = [
   {
     id: 4,
     name: "Player",
-    role: "AT",
+    role: PlayerRoles.Attack,
     speed: 3.5,
     strength: 1,
     power: 1,
@@ -44,7 +44,7 @@ export const players: PlayerProps[] = [
   {
     id: 5,
     name: "Player",
-    role: "AT",
+    role: PlayerRoles.Attack,
     speed: 3.5,
     strength: 1,
     power: 1,

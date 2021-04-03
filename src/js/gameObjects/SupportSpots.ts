@@ -11,7 +11,7 @@ export default class SupportSpots {
   constructor(scene: GameScene, team: Team, isLeft: boolean) {
     const CENTER_X = 640;
     const CENTER_Y = 352;
-    const CENTER_A = 128;
+    const CENTER_A = 160;
     const GAP_X = 80;
     const GAP_Y = 80;
     const COLS = 5;

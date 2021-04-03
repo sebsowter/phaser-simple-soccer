@@ -1,5 +1,5 @@
 import GameScene from "../scenes/GameScene";
-import { PlayerProps } from "../types";
+import { PlayerProps, PlayerRoles } from "../types";
 import {
   DELTA,
   PLAYER_COMFORT_DISTANCE,
@@ -23,6 +23,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public body: Phaser.Physics.Arcade.Body;
 
   private _team: Team;
+  private _homeDefault: Phaser.Math.Vector2;
   private _home: Phaser.Math.Vector2;
   private _target: Phaser.Math.Vector2;
   private _regulator: Regulator;
@@ -42,8 +43,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
     super(scene, x, y, "sprites", frame);
 
-    this._home = home;
     this._team = team;
+    this._home = this._homeDefault = home;
     this._regulator = new Regulator(this.scene);
 
     this.scene.add.existing(this);
@@ -111,29 +112,28 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         this.setTarget(this.rearInterposeTarget);
 
         const targetDistance = this.position.distance(this.target);
-        const temp1 = new Phaser.Math.Vector2(
-          this.scene.ball.position.x - this.target.x,
-          this.scene.ball.position.y - this.target.y
-        ).normalize();
-        const temp2 = new Phaser.Math.Vector2(
-          this.target.x + temp1.x * targetDistance,
-          this.target.y + temp1.y * targetDistance
-        );
+        const temp1 = this.scene.ball.position
+          .clone()
+          .subtract(this.target)
+          .normalize();
+        const temp2 = this.target
+          .clone()
+          .add(
+            new Phaser.Math.Vector2(
+              temp1.x * targetDistance,
+              temp1.y * targetDistance
+            )
+          );
         const interposeAngle = Phaser.Math.Angle.BetweenPoints(
           this.position,
           temp2
         );
 
-        if (interposeAngle !== 0) {
-          this.setVelocity(
-            speed * delta * Math.cos(interposeAngle),
-            speed * delta * Math.sin(interposeAngle)
-          );
-        } else {
-          this.setVelocity(0, 0);
-        }
-
         this.setRotation(ballAngle);
+        this.setVelocity(
+          speed * delta * Math.cos(interposeAngle),
+          speed * delta * Math.sin(interposeAngle)
+        );
         break;
     }
   }
@@ -156,6 +156,12 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
+  public setDefaultHomeRegion(): this {
+    this._home = this._homeDefault;
+
+    return this;
+  }
+
   public isCloseToHome(epsilon: number = 10): boolean {
     return this.position.fuzzyEquals(this.home, epsilon);
   }
@@ -168,15 +174,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return position.clone().subtract(this.position).dot(this.facing) > 0;
   }
 
-  public support(): this {
-    return this;
-  }
-
-  public returnHome(): this {
-    return this;
-  }
-
-  public returnHomeIfWaiting(target?: Phaser.Math.Vector2): this {
+  public updateHomeIfWaiting(target?: Phaser.Math.Vector2): this {
     return this;
   }
 
@@ -188,11 +186,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this.getData("index");
   }
 
-  public get role(): string {
+  public get role(): PlayerRoles {
     return this.getData("role");
   }
 
-  public get mode(): number {
+  public get mode(): PlayerModes {
     return this.getData("mode");
   }
 
@@ -321,5 +319,27 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
           this.scene.pitch.height);
 
     return new Phaser.Math.Vector2(x, y);
+  }
+
+  public findSupport() {
+    const supportingPlayer = this.team.calculateSupportingPlayer();
+
+    if (!this.team.supportingPlayer) {
+      this.team.setSupportingPlayer(supportingPlayer);
+
+      if (supportingPlayer) {
+        this.scene.events.emit("support", supportingPlayer);
+      }
+    } else if (
+      supportingPlayer &&
+      supportingPlayer !== this.team.supportingPlayer
+    ) {
+      if (this.team.supportingPlayer) {
+        this.scene.events.emit("goHome", supportingPlayer);
+      } else {
+        this.team.setSupportingPlayer(supportingPlayer);
+        this.scene.events.emit("support", supportingPlayer);
+      }
+    }
   }
 }

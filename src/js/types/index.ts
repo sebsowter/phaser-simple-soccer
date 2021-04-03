@@ -1,7 +1,13 @@
+export enum PlayerRoles {
+  "Goalkeeper",
+  "Attack",
+  "Defence",
+}
+
 export interface PlayerProps {
   id: number;
   name: string;
-  role: string;
+  role: PlayerRoles;
   speed: number;
   strength: number;
   power: number;
