@@ -1,6 +1,6 @@
 import { PlayerProps } from "../types";
 import { MAX_PASS_POWER, MIN_PASS_DISTANCE } from "../constants";
-import { Team, PlayerBase, PlayerModes } from "./";
+import { Team, PlayerBase } from "./";
 
 export enum PlayerKeeperStates {
   TendGoal,
@@ -53,32 +53,44 @@ export default class PlayerKeeper extends PlayerBase {
     // Exit state.
     switch (this.state) {
       case PlayerKeeperStates.TendGoal:
+        //this.setMode(PlayerModes.Track);
+        this.setInterposeOn(false);
+        break;
+
       case PlayerKeeperStates.ReturnToHome:
+        //this.setMode(PlayerModes.Track);
+        this.setSeekOn(false);
+        break;
+
       case PlayerKeeperStates.InterceptBall:
-        this.setMode(PlayerModes.Track);
+        //this.setMode(PlayerModes.Track);
+        this.setPersuitOn(false);
         break;
     }
 
     // Enter state.
     switch (state) {
       case PlayerKeeperStates.TendGoal:
-        this.setMode(PlayerModes.Interpose);
+        //this.setMode(PlayerModes.Interpose);
+        this.setInterposeOn(true);
         this.setTarget(this.rearInterposeTarget);
         break;
 
       case PlayerKeeperStates.ReturnToHome:
         this.setTarget(this.home);
-        this.setMode(PlayerModes.Seek);
+        this.setSeekOn(true);
+        //this.setMode(PlayerModes.Seek);
+        break;
+
+      case PlayerKeeperStates.InterceptBall:
+        //this.setMode(PlayerModes.Pursuit);
+        this.setPersuitOn(true);
         break;
 
       case PlayerKeeperStates.PutBallBackInPlay:
         this.team.setControllingPlayer(this);
         this.team.sendFieldPlayersToHome();
         this.team.opponents.sendFieldPlayersToHome();
-        break;
-
-      case PlayerKeeperStates.InterceptBall:
-        this.setMode(PlayerModes.Pursuit);
         break;
     }
 
@@ -113,6 +125,16 @@ export default class PlayerKeeper extends PlayerBase {
         }
         break;
 
+      case PlayerKeeperStates.InterceptBall:
+        if (this.isTooFarFromGoalMouth && !this.isClosestPlayerOnPitchToBall) {
+          this.setState(PlayerKeeperStates.ReturnToHome);
+        } else if (this.isBallWithinKeeperRange) {
+          this.scene.ball.trap();
+          this.scene.setGoalkeeperHasBall(true);
+          this.setState(PlayerKeeperStates.PutBallBackInPlay);
+        }
+        break;
+
       case PlayerKeeperStates.PutBallBackInPlay:
         const [canPass, receiver, targetPos] = this.team.findPass(
           this,
@@ -130,16 +152,6 @@ export default class PlayerKeeper extends PlayerBase {
           this.setState(PlayerKeeperStates.TendGoal);
         } else {
           this.setVelocity(0, 0);
-        }
-        break;
-
-      case PlayerKeeperStates.InterceptBall:
-        if (this.isTooFarFromGoalMouth && !this.isClosestPlayerOnPitchToBall) {
-          this.setState(PlayerKeeperStates.ReturnToHome);
-        } else if (this.isBallWithinKeeperRange) {
-          this.scene.ball.trap();
-          this.scene.setGoalkeeperHasBall(true);
-          this.setState(PlayerKeeperStates.PutBallBackInPlay);
         }
         break;
     }

@@ -87,6 +87,7 @@ export default class Team extends Phaser.GameObjects.Group {
       case TeamStates.PrepareForKickOff:
         this.scene.setGameOn(true);
         break;
+
       case TeamStates.Attacking:
         this.setSupportingPlayer(null);
         break;
@@ -104,12 +105,12 @@ export default class Team extends Phaser.GameObjects.Group {
         break;
 
       case TeamStates.Defending:
-        this.updateHomeTargets(state);
+        this.updateHomeTargets(this._regions.defending);
         this.updateTargetsOfWaitingPlayers();
         break;
 
       case TeamStates.Attacking:
-        this.updateHomeTargets(state);
+        this.updateHomeTargets(this._regions.attacking);
         this.updateTargetsOfWaitingPlayers();
         break;
     }
@@ -153,12 +154,9 @@ export default class Team extends Phaser.GameObjects.Group {
       });
   }
 
-  public updateHomeTargets(state: number) {
-    const { defending, attacking } = this._regions;
-    const region = state === TeamStates.Attacking ? attacking : defending;
-
+  public updateHomeTargets(regions: number[]) {
     this.players.forEach((player: PlayerBase, index: number) => {
-      player.setHome(getRegionPos(region[index]));
+      player.setHome(getRegionPos(regions[index]));
     });
   }
 
@@ -166,7 +164,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this.players
       .filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
       .forEach((player: PlayerBase) => {
-        player.updateHomeIfWaiting();
+        player.setHomeIfWaiting();
       });
   }
 
@@ -288,7 +286,6 @@ export default class Team extends Phaser.GameObjects.Group {
         MAX_PASS_POWER
       )
     ) {
-      this.controllingPlayer.passToRequester(player);
       this.scene.events.emit("passMe", player);
     }
   }

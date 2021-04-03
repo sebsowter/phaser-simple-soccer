@@ -1,5 +1,5 @@
 import { PASS_THREAT_RADIUS } from "../constants";
-import { PlayerBase, PlayerModes } from "./";
+import { PlayerBase } from "./";
 
 export enum PlayerFieldStates {
   Wait,
@@ -44,9 +44,9 @@ export class ReceiveBall extends State {
           PASS_THREAT_RADIUS
         ))
     ) {
-      player.setMode(PlayerModes.Seek);
+      // player.setMode(PlayerModes.Seek);
     } else {
-      player.setMode(PlayerModes.Pursuit);
+      // player.setMode(PlayerModes.Pursuit);
     }
   }
 
@@ -55,9 +55,9 @@ export class ReceiveBall extends State {
       player.team.setReceivingPlayer(null);
       player.setState(PlayerFieldStates.ChaseBall);
     } else if (player.isAtTarget) {
-      player.setMode(PlayerModes.Track);
+      // player.setMode(PlayerModes.Track);
     } else {
-      player.setMode(PlayerModes.Seek);
+      // player.setMode(PlayerModes.Seek);
     }
   }
 

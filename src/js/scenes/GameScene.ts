@@ -6,7 +6,6 @@ import {
   TeamStates,
   PlayerFieldStates,
   PlayerKeeperStates,
-  PlayerModes,
 } from "../gameObjects";
 import Score from "../gameObjects/Score";
 import { PlayerRoles } from "../types";
@@ -155,21 +154,6 @@ export default class GameScene extends Phaser.Scene {
           return "Defending";
       }
     }
-
-    function getPlayerSteering(player: PlayerBase): string {
-      switch (player.mode) {
-        case PlayerModes.Seek:
-          return "Seek";
-        case PlayerModes.Pursuit:
-          return "Pursuit";
-        case PlayerModes.Interpose:
-          return "Interpose";
-        case PlayerModes.Track:
-        default:
-          return "Track";
-      }
-    }
-
     function getPlayerState(player: PlayerBase): string {
       if (player.role === PlayerRoles.Goalkeeper) {
         switch (player.state) {
@@ -206,6 +190,8 @@ export default class GameScene extends Phaser.Scene {
 
     setText(`#pitch-gameon`, `${this.gameOn}`);
     setText(`#pitch-goalkeeper`, `${this.goalkeeperHasBall}`);
+    setText(`#red-score`, `${this._goalA.scored}`);
+    setText(`#blue-score`, `${this._goalB.scored}`);
 
     [this._teamA, this._teamB].forEach((team: Team) => {
       setText(`#${team.name}-state`, getTeamState(team));
@@ -228,9 +214,11 @@ export default class GameScene extends Phaser.Scene {
 
       team.players.forEach((player: PlayerBase, index: number) => {
         setText(`#${team.name}-state-${index + 1}`, getPlayerState(player));
+        setText(`#${team.name}-persuit-${index + 1}`, `${player.persuitOn}`);
+        setText(`#${team.name}-seek-${index + 1}`, `${player.seekOn}`);
         setText(
-          `#${team.name}-steering-${index + 1}`,
-          getPlayerSteering(player)
+          `#${team.name}-interpose-${index + 1}`,
+          `${player.interposeOn}`
         );
         setText(`#${team.name}-home-${index + 1}`, `${player.isAtHome}`);
         setText(`#${team.name}-target-${index + 1}`, `${player.isAtTarget}`);

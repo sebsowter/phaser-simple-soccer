@@ -22,6 +22,7 @@
       }
 
       table td {
+        text-align: center;
         border: 1px solid #333;
         background-color: #444;
       }
@@ -42,8 +43,8 @@
                 <th width="150">goalkeeperHasBall</th>
               </thead>
               <tr>
-                <td id="pitch-gameon" style="text-align: center">-</td>
-                <td id="pitch-goalkeeper" style="text-align: center">-</td>
+                <td id="pitch-gameon">-</td>
+                <td id="pitch-goalkeeper">-</td>
               </tr>
             </table>
           </td>
@@ -58,6 +59,7 @@
             <table>
               <thead>
                 <th width="150">State</th>
+                <th width="100">Score</th>
                 <th width="100">Closest</th>
                 <th width="100">Controlling</th>
                 <th width="100">Receiving</th>
@@ -65,10 +67,11 @@
               </thead>
               <tr>
                 <td id="red-state">-</td>
-                <td id="red-closest" style="text-align: center">-</td>
-                <td id="red-controlling" style="text-align: center">-</td>
-                <td id="red-receiving" style="text-align: center">-</td>
-                <td id="red-supporting" style="text-align: center">-</td>
+                <td id="red-score">-</td>
+                <td id="red-closest">-</td>
+                <td id="red-controlling">-</td>
+                <td id="red-receiving">-</td>
+                <td id="red-supporting">-</td>
               </tr>
             </table>
           </td>
@@ -78,45 +81,57 @@
             <table>
               <thead>
                 <th width="100">Player</th>
-                <th width="125">State</th>
-                <th width="125">Steering</th>
+                <th width="150">State</th>
+                <th width="100">Persuit</th>
+                <th width="100">Interpose</th>
+                <th width="100">Seek</th>
                 <th width="100">isAtHome</th>
                 <th width="100">isAtTarget</th>
               </thead>
               <tr>
-                <td>Player 1:</td>
+                <td>1</td>
                 <td id="red-state-1">-</td>
-                <td id="red-steering-1">-</td>
-                <td id="red-home-1" style="text-align: center">-</td>
-                <td id="red-target-1" style="text-align: center">-</td>
+                <td id="red-persuit-1">-</td>
+                <td id="red-interpose-1">-</td>
+                <td id="red-seek-1">-</td>
+                <td id="red-home-1">-</td>
+                <td id="red-target-1">-</td>
               </tr>
               <tr>
-                <td>Player 2:</td>
+                <td>2</td>
                 <td id="red-state-2">-</td>
-                <td id="red-steering-2">-</td>
-                <td id="red-home-2" style="text-align: center">-</td>
-                <td id="red-target-2" style="text-align: center">-</td>
+                <td id="red-persuit-2">-</td>
+                <td id="red-interpose-2">-</td>
+                <td id="red-seek-2">-</td>
+                <td id="red-home-2">-</td>
+                <td id="red-target-2">-</td>
               </tr>
               <tr>
-                <td>Player 3:</td>
+                <td>3</td>
                 <td id="red-state-3">-</td>
-                <td id="red-steering-3">-</td>
-                <td id="red-home-3" style="text-align: center">-</td>
-                <td id="red-target-3" style="text-align: center">-</td>
+                <td id="red-persuit-3">-</td>
+                <td id="red-interpose-3">-</td>
+                <td id="red-seek-3">-</td>
+                <td id="red-home-3">-</td>
+                <td id="red-target-3">-</td>
               </tr>
               <tr>
-                <td>Player 4:</td>
+                <td>4</td>
                 <td id="red-state-4">-</td>
-                <td id="red-steering-4">-</td>
-                <td id="red-home-4" style="text-align: center">-</td>
-                <td id="red-target-4" style="text-align: center">-</td>
+                <td id="red-persuit-4">-</td>
+                <td id="red-interpose-4">-</td>
+                <td id="red-seek-4">-</td>
+                <td id="red-home-4">-</td>
+                <td id="red-target-4">-</td>
               </tr>
               <tr>
-                <td>Player 5:</td>
+                <td>5</td>
                 <td id="red-state-5">-</td>
-                <td id="red-steering-5">-</td>
-                <td id="red-home-5" style="text-align: center">-</td>
-                <td id="red-target-5" style="text-align: center">-</td>
+                <td id="red-persuit-5">-</td>
+                <td id="red-interpose-5">-</td>
+                <td id="red-seek-5">-</td>
+                <td id="red-home-5">-</td>
+                <td id="red-target-5">-</td>
               </tr>
             </table>
           </td>
@@ -132,6 +147,7 @@
             <table>
               <thead>
                 <th width="150">State</th>
+                <th width="100">Score</th>
                 <th width="100">Closest</th>
                 <th width="100">Controlling</th>
                 <th width="100">Receiving</th>
@@ -139,10 +155,11 @@
               </thead>
               <tr>
                 <td id="blue-state">-</td>
-                <td id="blue-closest" style="text-align: center">-</td>
-                <td id="blue-controlling" style="text-align: center">-</td>
-                <td id="blue-receiving" style="text-align: center">-</td>
-                <td id="blue-supporting" style="text-align: center">-</td>
+                <td id="blue-score">-</td>
+                <td id="blue-closest">-</td>
+                <td id="blue-controlling">-</td>
+                <td id="blue-receiving">-</td>
+                <td id="blue-supporting">-</td>
               </tr>
             </table>
           </td>
@@ -152,45 +169,57 @@
             <table>
               <thead>
                 <th width="100">Player</th>
-                <th width="125">State</th>
-                <th width="125">Steering</th>
+                <th width="150">State</th>
+                <th width="100">Persuit</th>
+                <th width="100">Interpose</th>
+                <th width="100">Seek</th>
                 <th width="100">isAtHome</th>
                 <th width="100">isAtTarget</th>
               </thead>
               <tr>
-                <td>Player 1:</td>
+                <td>1</td>
                 <td id="blue-state-1">-</td>
-                <td id="blue-steering-1">-</td>
-                <td id="blue-home-1" style="text-align: center">-</td>
-                <td id="blue-target-1" style="text-align: center">-</td>
+                <td id="blue-persuit-1">-</td>
+                <td id="blue-interpose-1">-</td>
+                <td id="blue-seek-1">-</td>
+                <td id="blue-home-1">-</td>
+                <td id="blue-target-1">-</td>
               </tr>
               <tr>
-                <td>Player 2:</td>
+                <td>2</td>
                 <td id="blue-state-2">-</td>
-                <td id="blue-steering-2">-</td>
-                <td id="blue-home-2" style="text-align: center">-</td>
-                <td id="blue-target-2" style="text-align: center">-</td>
+                <td id="blue-persuit-2">-</td>
+                <td id="blue-interpose-2">-</td>
+                <td id="blue-seek-2">-</td>
+                <td id="blue-home-2">-</td>
+                <td id="blue-target-2">-</td>
               </tr>
               <tr>
-                <td>Player 3:</td>
+                <td>3</td>
                 <td id="blue-state-3">-</td>
-                <td id="blue-steering-3">-</td>
-                <td id="blue-home-3" style="text-align: center">-</td>
-                <td id="blue-target-3" style="text-align: center">-</td>
+                <td id="blue-persuit-3">-</td>
+                <td id="blue-interpose-3">-</td>
+                <td id="blue-seek-3">-</td>
+                <td id="blue-home-3">-</td>
+                <td id="blue-target-3">-</td>
               </tr>
               <tr>
-                <td>Player 4:</td>
+                <td>4</td>
                 <td id="blue-state-4">-</td>
-                <td id="blue-steering-4">-</td>
-                <td id="blue-home-4" style="text-align: center">-</td>
-                <td id="blue-target-4" style="text-align: center">-</td>
+                <td id="blue-persuit-4">-</td>
+                <td id="blue-interpose-4">-</td>
+                <td id="blue-seek-4">-</td>
+                <td id="blue-home-4">-</td>
+                <td id="blue-target-4">-</td>
               </tr>
               <tr>
-                <td>Player 5:</td>
+                <td>5</td>
                 <td id="blue-state-5">-</td>
-                <td id="blue-steering-5">-</td>
-                <td id="blue-home-5" style="text-align: center">-</td>
-                <td id="blue-target-5" style="text-align: center">-</td>
+                <td id="blue-persuit-5">-</td>
+                <td id="blue-interpose-5">-</td>
+                <td id="blue-seek-5">-</td>
+                <td id="blue-home-5">-</td>
+                <td id="blue-target-5">-</td>
               </tr>
             </table>
           </td>
