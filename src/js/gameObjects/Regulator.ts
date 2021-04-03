@@ -1,5 +1,5 @@
 function getRandomArbitrary(range: number): number {
-  return Math.random() * (range * 2) - range;
+  return range * Math.random() * 2 - range;
 }
 
 export default class Regulator {
@@ -7,16 +7,20 @@ export default class Regulator {
   private _updatePeriod: number;
   private _nextUpdateTime: number;
 
-  constructor(scene: Phaser.Scene, updatesPerSecond: number = 8) {
+  constructor(
+    scene: Phaser.Scene,
+    updatesPerSecond: number = 8,
+    delay: number = 10
+  ) {
     this._updatePeriod = 1000 / updatesPerSecond;
     this._nextUpdateTime = Math.random() * this._updatePeriod;
     this._timer = scene.time.addEvent({
-      //startAt: this._nextUpdateTime,
-      //delay: this._updatePeriod,
+      delay,
     });
   }
 
   public get isReady(): boolean {
+    return true;
     const elapsed = this._timer.getElapsed();
 
     if (elapsed > this._nextUpdateTime) {

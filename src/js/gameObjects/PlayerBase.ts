@@ -103,13 +103,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         break;
 
       case PlayerModes.Track:
-        const angle = Phaser.Math.Angle.BetweenPoints(
-          this.position,
-          this.scene.ball.position
-        );
-
+        this.setRotation(ballAngle);
         this.setVelocity(0, 0);
-        this.setRotation(angle);
         break;
 
       case PlayerModes.Interpose:
@@ -189,24 +184,20 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
-  public get speedPerFrame(): number {
-    return this.getData("speed");
+  public get index(): number {
+    return this.getData("index");
+  }
+
+  public get role(): string {
+    return this.getData("role");
   }
 
   public get mode(): number {
     return this.getData("mode");
   }
 
-  public get index(): number {
-    return this.getData("index");
-  }
-
-  public get isReadyForNextKick(): boolean {
-    return this._regulator.isReady;
-  }
-
-  public get role(): string {
-    return this.getData("role");
+  public get speedPerFrame(): number {
+    return this.getData("speed");
   }
 
   public get isAtHome(): boolean {
@@ -215,6 +206,10 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get isAtTarget(): boolean {
     return this.isCloseToTarget();
+  }
+
+  public get isReadyForNextKick(): boolean {
+    return this._regulator.isReady;
   }
 
   public get target(): Phaser.Math.Vector2 {
@@ -294,17 +289,15 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public get isAheadOfAttacker(): boolean {
-    const goalX = this.team.goalOpp.position.x;
-
     return (
-      Math.abs(this.position.x - goalX) <
-      Math.abs(this.team.controllingPlayer.position.x - goalX)
+      Math.abs(this.x - this.team.goalOpp.position.x) <
+      Math.abs(this.team.controllingPlayer.x - this.team.goalOpp.position.x)
     );
   }
 
   public get isInHotPosition(): boolean {
     return (
-      Math.abs(this.position.y - this.team.goalOpp.position.y) <
+      Math.abs(this.y - this.team.goalOpp.position.y) <
       this.scene.pitch.width / 3
     );
   }

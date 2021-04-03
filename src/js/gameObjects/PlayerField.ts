@@ -82,7 +82,7 @@ export default class PlayerField extends PlayerBase {
         ) {
           this.setMode(PlayerModes.Seek);
         } else {
-          this.setMode(PlayerModes.Seek);
+          this.setMode(PlayerModes.Pursuit);
         }
         break;
 
