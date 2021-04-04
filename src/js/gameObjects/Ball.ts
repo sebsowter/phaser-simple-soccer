@@ -1,20 +1,18 @@
-import { DELTA } from "../constants";
+import { DELTA, BALL_DRAG, BALL_BOUNCE } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     const RADIUS = 8;
-    const BOUNCE = 0.5;
-    const DRAG = 0.25;
 
     super(scene, x, y, "sprites", 0);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
-    this.setBounce(BOUNCE, BOUNCE);
-    this.setDrag(DRAG, DRAG);
+    this.setBounce(BALL_BOUNCE, BALL_BOUNCE);
+    this.setDrag(BALL_DRAG, BALL_DRAG);
     this.setDamping(true);
     this.setSize(RADIUS * 2, RADIUS * 2);
     this.setCircle(RADIUS);

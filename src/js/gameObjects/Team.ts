@@ -195,7 +195,7 @@ export default class Team extends Phaser.GameObjects.Group {
       }
     }
 
-    return [false, target];
+    return [false, null];
   }
 
   public getBestPassToReceiver(
@@ -284,16 +284,17 @@ export default class Team extends Phaser.GameObjects.Group {
     return [false, null, null];
   }
 
-  public requestPass(player: PlayerBase) {
+  public requestPass(requester: PlayerBase) {
     if (
+      Math.random() < 0.1 &&
       this.isPassSafeFromAllOpponents(
         this.controllingPlayer.position,
-        player.position,
-        player,
+        requester.position,
+        requester,
         MAX_PASS_POWER
       )
     ) {
-      this.scene.events.emit("passMe", player);
+      this.scene.events.emit("passToMe", this.controllingPlayer, requester);
     }
   }
 

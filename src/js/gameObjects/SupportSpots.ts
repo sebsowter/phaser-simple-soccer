@@ -46,17 +46,17 @@ export default class SupportSpots {
     }
 
     scene.time.addEvent({
-      delay: 1000,
+      delay: 2000,
       loop: true,
       callbackScope: this,
       callback: function () {
-        this._circles.forEach((circle: any) => {
-          circle.setVisible(this._team.isInControl);
-        });
-
         if (this._team.isInControl) {
           this.calculateSupportSpot();
         }
+
+        this._circles.forEach((circle: any) => {
+          circle.setVisible(this._team.isInControl);
+        });
       },
     });
   }

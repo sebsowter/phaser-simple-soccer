@@ -1,6 +1,6 @@
 export const DELTA = 1 / 60;
-export const MAX_SHOT_POWER = 700;
-export const MAX_PASS_POWER = 600;
+export const MAX_SHOT_POWER = 640;
+export const MAX_PASS_POWER = 640;
 export const POT_SHOT_CHANCE = 0.005;
 export const PASS_THREAT_RADIUS = 64;
 export const MIN_PASS_DISTANCE = 128;
@@ -11,3 +11,5 @@ export const DRIBBLE_POWER = 64;
 export const DRIBBLE_POWER_GOAL = 96;
 export const INTERCEPT_RANGE = 256;
 export const KEEPER_RANGE = 20;
+export const BALL_DRAG = 0.3;
+export const BALL_BOUNCE = 0.5;

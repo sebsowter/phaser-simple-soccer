@@ -37,10 +37,9 @@ export default class PlayerField extends PlayerBase {
 
     this.scene.events.on(
       "receiveBall",
-      function (receiver: PlayerBase, target: Phaser.Math.Vector2) {
-        if (receiver === this) {
+      function (player: PlayerBase, target: Phaser.Math.Vector2) {
+        if (player === this) {
           this.setTarget(target);
-          //this.scene._circle.setPosition(target.x, target.y);
           this.setState(PlayerFieldStates.ReceiveBall);
         }
       },
@@ -48,7 +47,7 @@ export default class PlayerField extends PlayerBase {
     );
 
     this.scene.events.on(
-      "support",
+      "supportAttacker",
       function (player: PlayerBase) {
         if (
           player === this &&
@@ -83,19 +82,17 @@ export default class PlayerField extends PlayerBase {
     );
 
     this.scene.events.on(
-      "passMe",
-      function (receiver: PlayerBase) {
-        if (receiver === this && this.isBallWithinKickingRange) {
-          const targetVector = receiver.position
-            .subtract(this.scene.ball.position)
-            .normalize();
-
-          this.team.ball.kick(targetVector, MAX_PASS_POWER);
+      "passToMe",
+      function (player: PlayerBase, receiver: PlayerBase) {
+        if (player === this && this.isBallWithinKickingRange) {
+          this.team.ball.kick(
+            receiver.position
+              .clone()
+              .subtract(this.scene.ball.position)
+              .normalize(),
+            MAX_PASS_POWER
+          );
           this.scene.events.emit("receiveBall", receiver, receiver.position);
-          //this.scene._circle.setPosition(
-          //  receiver.position.x,
-          //  receiver.position.y
-          //);
           this.setState(PlayerFieldStates.Wait);
           this.findSupport();
         }
@@ -133,6 +130,7 @@ export default class PlayerField extends PlayerBase {
     switch (value) {
       case PlayerFieldStates.ChaseBall:
         this.setSeekOn(true);
+        this.setTarget(this.scene.ball.position);
         break;
 
       case PlayerFieldStates.SupportAttacker:
@@ -143,7 +141,7 @@ export default class PlayerField extends PlayerBase {
       case PlayerFieldStates.ReturnToHome:
         this.setSeekOn(true);
 
-        if (this.isCloseToHome(96)) {
+        if (this.target.distance(this.home) > 96) {
           this.setTarget(this.home);
         }
         break;
@@ -156,6 +154,7 @@ export default class PlayerField extends PlayerBase {
 
       case PlayerFieldStates.KickBall:
         this.team.setControllingPlayer(this);
+        this.setTarget(this.scene.ball.position);
 
         if (!this.isReadyForNextKick) {
           this.setState(PlayerFieldStates.ChaseBall);
@@ -164,6 +163,7 @@ export default class PlayerField extends PlayerBase {
 
       case PlayerFieldStates.Dribble:
         this.team.setControllingPlayer(this);
+        this.setTarget(this.scene.ball.position);
         break;
 
       case PlayerFieldStates.ReceiveBall:
@@ -178,8 +178,10 @@ export default class PlayerField extends PlayerBase {
               PASS_THREAT_RADIUS
             ))
         ) {
+          this.setPersuitOn(false);
           this.setSeekOn(true);
         } else {
+          this.setSeekOn(false);
           this.setPersuitOn(true);
         }
         break;
@@ -260,14 +262,12 @@ export default class PlayerField extends PlayerBase {
 
       case PlayerFieldStates.Wait:
         if (!this.isAtTarget) {
-          //this.setMode(PlayerModes.Seek);
           this.setSeekOn(true);
         } else {
           this.setSeekOn(false);
           this.setVelocity(0, 0);
           this.trackBall();
         }
-        //this.setMode(PlayerModes.Track);
 
         if (
           this.team.isInControl &&
@@ -287,33 +287,36 @@ export default class PlayerField extends PlayerBase {
         break;
 
       case PlayerFieldStates.KickBall:
-        const dot = this.facing.dot(
-          this.scene.ball.position.clone().subtract(this.position).normalize()
-        );
+        const ballDot = this.facing
+          .clone()
+          .dot(
+            this.scene.ball.position.clone().subtract(this.position).normalize()
+          );
 
         if (
           this.team.receivingPlayer ||
           this.scene.goalkeeperHasBall ||
-          dot < 0
+          ballDot < 0
         ) {
           this.setState(PlayerFieldStates.ChaseBall);
         } else {
-          const powerShot = MAX_SHOT_POWER * dot;
-          const [canShoot, shotTarget] = this.team.canShoot(
+          const shootPower = MAX_SHOT_POWER * ballDot;
+          const [canShoot, shootTarget] = this.team.canShoot(
             this.scene.ball.position,
-            powerShot
+            shootPower
           );
 
           if (canShoot || Math.random() < POT_SHOT_CHANCE) {
-            this.scene.ball.kick(
-              shotTarget.clone().subtract(this.scene.ball.position),
-              powerShot
-            );
+            const kickTarget = shootTarget || this.team.goalOpp.position;
 
+            this.scene.ball.kick(
+              kickTarget.clone().subtract(this.scene.ball.position).normalize(),
+              shootPower
+            );
             this.setState(PlayerFieldStates.Wait);
             this.findSupport();
           } else {
-            const passPower = MAX_PASS_POWER * dot;
+            const passPower = MAX_PASS_POWER * ballDot;
             const [canPass, receiver, passTarget] = this.team.findPass(
               this,
               passPower,
@@ -322,7 +325,10 @@ export default class PlayerField extends PlayerBase {
 
             if (this.isThreatened && canPass) {
               this.scene.ball.kick(
-                passTarget.clone().subtract(this.scene.ball.position),
+                passTarget
+                  .clone()
+                  .subtract(this.scene.ball.position)
+                  .normalize(),
                 passPower
               );
               this.setState(PlayerFieldStates.Wait);
@@ -338,7 +344,7 @@ export default class PlayerField extends PlayerBase {
 
       case PlayerFieldStates.Dribble:
         const { facing } = this.team.goalOpp;
-        const goalDot = this.team.goalOpp.facing.dot(this.facing);
+        const goalDot = this.team.goalOpp.facing.clone().dot(this.facing);
 
         // If back to goal kick ball at an angle to turn.
         if (goalDot > 0) {

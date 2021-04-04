@@ -43,7 +43,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this._persuitOn = false;
     this._interposeOn = false;
     this._team = team;
-    this._home = this._homeDefault = home;
+    this._home = this._homeDefault = this._target = home;
     this._regulator = new Regulator(this.scene);
 
     this.scene.add.existing(this);
@@ -73,7 +73,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public preUpdate(time: number, delta: number) {
     const speed = this.getData("speed");
 
-    if (this._seekOn) {
+    if (this.seekOn) {
       const targetAngle = Phaser.Math.Angle.BetweenPoints(
         this.position,
         this.target
@@ -84,7 +84,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         speed * delta * Math.cos(targetAngle),
         speed * delta * Math.sin(targetAngle)
       );
-    } else if (this._persuitOn) {
+    } else if (this.persuitOn) {
       const ballSpeed = this.scene.ball.body.speed;
       const magnitude = this.scene.ball.position
         .clone()
@@ -102,7 +102,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         speed * delta * Math.cos(targetAngle2),
         speed * delta * Math.sin(targetAngle2)
       );
-    } else if (this._interposeOn) {
+    } else if (this.interposeOn) {
       this.setTarget(this.rearInterposeTarget);
 
       const distance = this.position.distance(this.target);
@@ -135,7 +135,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       this.team.setSupportingPlayer(supportingPlayer);
 
       if (supportingPlayer) {
-        this.scene.events.emit("support", supportingPlayer);
+        this.scene.events.emit("supportAttacker", supportingPlayer);
       }
     } else if (
       supportingPlayer &&
@@ -145,7 +145,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         this.scene.events.emit("goHome", supportingPlayer);
       } else {
         this.team.setSupportingPlayer(supportingPlayer);
-        this.scene.events.emit("support", supportingPlayer);
+        this.scene.events.emit("supportAttacker", supportingPlayer);
       }
     }
   }
