@@ -91,18 +91,16 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         .subtract(this.position)
         .length();
       const lookAheadTime = ballSpeed !== 0 ? magnitude / ballSpeed : 0;
+      const fPos = this.scene.ball.futurePosition(lookAheadTime);
 
-      this.setTarget(this.scene.ball.futurePosition(lookAheadTime));
+      this.setTarget(fPos);
 
-      const targetAngle = Phaser.Math.Angle.BetweenPoints(
-        this.position,
-        this.target
-      );
+      const targetAngle2 = Phaser.Math.Angle.BetweenPoints(this.position, fPos);
 
-      this.setRotation(targetAngle);
+      this.setRotation(targetAngle2);
       this.setVelocity(
-        speed * delta * Math.cos(targetAngle),
-        speed * delta * Math.sin(targetAngle)
+        speed * delta * Math.cos(targetAngle2),
+        speed * delta * Math.sin(targetAngle2)
       );
     } else if (this._interposeOn) {
       this.setTarget(this.rearInterposeTarget);

@@ -24,10 +24,8 @@ export default class PlayerKeeper extends PlayerBase {
     super(scene, x, y, frame, props, index, name, home, team);
 
     this.scene.events.on(
-      "pass",
-      function (props: any[]) {
-        const [receiver, target] = props;
-
+      "receiveBall",
+      function (receiver: PlayerBase) {
         if (receiver === this) {
           this.setState(PlayerKeeperStates.InterceptBall);
         }
@@ -50,28 +48,24 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public setState(state: PlayerKeeperStates): this {
-    // Exit state.
     switch (this.state) {
       case PlayerKeeperStates.TendGoal:
-        //this.setMode(PlayerModes.Track);
         this.setInterposeOn(false);
         break;
 
       case PlayerKeeperStates.ReturnToHome:
-        //this.setMode(PlayerModes.Track);
         this.setSeekOn(false);
         break;
 
       case PlayerKeeperStates.InterceptBall:
-        //this.setMode(PlayerModes.Track);
         this.setPersuitOn(false);
         break;
     }
 
-    // Enter state.
+    super.setState(state);
+
     switch (state) {
       case PlayerKeeperStates.TendGoal:
-        //this.setMode(PlayerModes.Interpose);
         this.setInterposeOn(true);
         this.setTarget(this.rearInterposeTarget);
         break;
@@ -79,11 +73,9 @@ export default class PlayerKeeper extends PlayerBase {
       case PlayerKeeperStates.ReturnToHome:
         this.setTarget(this.home);
         this.setSeekOn(true);
-        //this.setMode(PlayerModes.Seek);
         break;
 
       case PlayerKeeperStates.InterceptBall:
-        //this.setMode(PlayerModes.Pursuit);
         this.setPersuitOn(true);
         break;
 
@@ -94,7 +86,7 @@ export default class PlayerKeeper extends PlayerBase {
         break;
     }
 
-    return super.setState(state);
+    return this;
   }
 
   public preUpdate(time: number, delta: number) {
@@ -148,7 +140,7 @@ export default class PlayerKeeper extends PlayerBase {
             MAX_PASS_POWER
           );
           this.scene.setGoalkeeperHasBall(false);
-          this.scene.events.emit("pass", [receiver, targetPos]);
+          this.scene.events.emit("receiveBall", receiver, targetPos);
           this.setState(PlayerKeeperStates.TendGoal);
         } else {
           this.setVelocity(0, 0);

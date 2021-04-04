@@ -20,7 +20,7 @@ export default class Regulator {
   }
 
   public get isReady(): boolean {
-    //return true;
+    return true;
     const elapsed = this._timer.getElapsed();
 
     if (elapsed > this._nextUpdateTime) {

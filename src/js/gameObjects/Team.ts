@@ -140,6 +140,13 @@ export default class Team extends Phaser.GameObjects.Group {
         }
         break;
     }
+
+    if (this.controllingPlayer) {
+      this.scene._circle.setPosition(
+        this.controllingPlayer.target.x,
+        this.controllingPlayer.target.y
+      );
+    }
   }
 
   public kickOff() {
