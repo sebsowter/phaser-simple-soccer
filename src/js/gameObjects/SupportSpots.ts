@@ -1,5 +1,5 @@
 import { MAX_SHOT_POWER, MAX_PASS_POWER } from "../constants";
-import { GameScene } from "../scenes";
+import { PitchScene } from "../scenes";
 import { Spot, Team } from "./";
 
 export default class SupportSpots {
@@ -8,12 +8,11 @@ export default class SupportSpots {
   private _supportSpot: Spot = null;
   private _circles: Phaser.GameObjects.Arc[];
 
-  constructor(scene: GameScene, team: Team, isLeft: boolean) {
-    const CENTER_X = 640;
+  constructor(scene: PitchScene, team: Team, isLeft: boolean) {
+    const CENTER_X = isLeft ? 64 + 96 * 9 : 64 + 96 * 3;
     const CENTER_Y = 352;
-    const CENTER_A = 160;
-    const GAP_X = 80;
-    const GAP_Y = 80;
+    const GAP_X = 96;
+    const GAP_Y = 88;
     const COLS = 5;
     const ROWS = 6;
     const LENGTH = (COLS - 1) * GAP_X;
@@ -25,13 +24,9 @@ export default class SupportSpots {
 
     for (let y = 0; y < ROWS; y++) {
       for (let x = 0; x < COLS; x++) {
-        const anchor = new Phaser.Math.Vector2(
-          isLeft ? CENTER_X + CENTER_A : CENTER_X - LENGTH - CENTER_A,
-          CENTER_Y - HEIGHT / 2
-        );
         const position = new Phaser.Math.Vector2(
-          anchor.x + x * GAP_X,
-          anchor.y + y * GAP_Y
+          CENTER_X - LENGTH / 2 + x * GAP_X,
+          CENTER_Y - HEIGHT / 2 + y * GAP_Y
         );
 
         this._spots.push(new Spot(position.x, position.y));
@@ -45,6 +40,7 @@ export default class SupportSpots {
       }
     }
 
+    // Calculate spots every two seconds.
     scene.time.addEvent({
       delay: 2000,
       loop: true,
@@ -86,7 +82,9 @@ export default class SupportSpots {
         spot.score += PASS_SAFE_STRENGTH;
       }
 
-      if (this._team.canShoot(spot, MAX_SHOT_POWER)[0]) {
+      const [canShoot] = this._team.canShoot(spot, MAX_SHOT_POWER);
+
+      if (canShoot) {
         spot.score += CAN_SHOOT_STRENGTH;
       }
 

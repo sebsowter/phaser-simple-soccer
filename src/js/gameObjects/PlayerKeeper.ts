@@ -1,5 +1,10 @@
 import { PlayerProps } from "../types";
-import { MAX_PASS_POWER, MIN_PASS_DISTANCE } from "../constants";
+import {
+  MAX_PASS_POWER,
+  MIN_PASS_DISTANCE,
+  MESSAGE_GO_HOME,
+  MESSAGE_RECEIVE_BALL,
+} from "../constants";
 import { Team, PlayerBase } from "./";
 
 export enum PlayerKeeperStates {
@@ -23,26 +28,26 @@ export default class PlayerKeeper extends PlayerBase {
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
-    this.scene.events.on(
-      "receiveBall",
-      function (receiver: PlayerBase) {
-        if (receiver === this) {
-          this.setState(PlayerKeeperStates.InterceptBall);
-        }
-      },
-      this
-    );
-
-    this.scene.events.on(
-      "goHome",
-      function (player: PlayerBase) {
-        if (player === this) {
-          this.setDefaultHomeRegion();
-          this.setState(PlayerKeeperStates.ReturnToHome);
-        }
-      },
-      this
-    );
+    this.scene.events
+      .on(
+        MESSAGE_RECEIVE_BALL,
+        function (player: PlayerBase) {
+          if (player === this) {
+            this.setState(PlayerKeeperStates.InterceptBall);
+          }
+        },
+        this
+      )
+      .on(
+        MESSAGE_GO_HOME,
+        function (player: PlayerBase) {
+          if (player === this) {
+            this.setDefaultHomeRegion();
+            this.setState(PlayerKeeperStates.ReturnToHome);
+          }
+        },
+        this
+      );
 
     this.setState(PlayerKeeperStates.ReturnToHome);
   }
@@ -92,7 +97,6 @@ export default class PlayerKeeper extends PlayerBase {
   public preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
 
-    // Execute state.
     switch (this.state) {
       case PlayerKeeperStates.TendGoal:
         this.setTarget(this.rearInterposeTarget);
@@ -128,7 +132,7 @@ export default class PlayerKeeper extends PlayerBase {
         break;
 
       case PlayerKeeperStates.PutBallBackInPlay:
-        const [canPass, receiver, targetPos] = this.team.findPass(
+        const [canPass, passReceiver, passTarget] = this.team.findPass(
           this,
           MAX_PASS_POWER,
           MIN_PASS_DISTANCE
@@ -136,11 +140,15 @@ export default class PlayerKeeper extends PlayerBase {
 
         if (canPass) {
           this.scene.ball.kick(
-            targetPos.clone().subtract(this.scene.ball.position),
+            passTarget.clone().subtract(this.scene.ball.position),
             MAX_PASS_POWER
           );
           this.scene.setGoalkeeperHasBall(false);
-          this.scene.events.emit("receiveBall", receiver, targetPos);
+          this.scene.events.emit(
+            MESSAGE_RECEIVE_BALL,
+            passReceiver,
+            passTarget
+          );
           this.setState(PlayerKeeperStates.TendGoal);
         } else {
           this.setVelocity(0, 0);
@@ -150,6 +158,6 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public get isAtHome(): boolean {
-    return this.isCloseToHome(64);
+    return this.isCloseToHome(192);
   }
 }

@@ -1,7 +1,12 @@
 export enum PlayerRoles {
   "Goalkeeper",
-  "Attack",
-  "Defence",
+  "Attacker",
+  "Defender",
+}
+
+export interface PlayerRegions {
+  attacking: number[];
+  defending: number[];
 }
 
 export interface PlayerProps {
@@ -9,15 +14,9 @@ export interface PlayerProps {
   name: string;
   role: PlayerRoles;
   speed: number;
-  strength: number;
-  power: number;
-  toughness: number;
-  accuracy: number;
-}
-
-export interface Regions {
-  attacking: number[];
-  defending: number[];
+  passMaxPower?: number;
+  shooMaxPower?: number;
+  shootAccuracy?: number;
 }
 
 export interface TeamProps {
@@ -25,5 +24,5 @@ export interface TeamProps {
   frame: number;
   name: string;
   players: number[];
-  regions: Regions;
+  regions: PlayerRegions;
 }

@@ -1,2 +1,2 @@
 export { default as LoaderScene } from "./LoaderScene";
-export { default as GameScene } from "./GameScene";
+export { default as PitchScene } from "./PitchScene";

@@ -1,21 +1,20 @@
-import { DELTA, BALL_DRAG, BALL_BOUNCE } from "../constants";
+import { DELTA, BALL_DRAG, BALL_BOUNCE, BALL_RADIUS } from "../constants";
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public body: Phaser.Physics.Arcade.Body;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    const RADIUS = 8;
-
     super(scene, x, y, "sprites", 0);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
 
+    this.setSize(BALL_RADIUS * 2, BALL_RADIUS * 2);
+    this.setCircle(BALL_RADIUS);
     this.setBounce(BALL_BOUNCE, BALL_BOUNCE);
     this.setDrag(BALL_DRAG, BALL_DRAG);
     this.setDamping(true);
-    this.setSize(RADIUS * 2, RADIUS * 2);
-    this.setCircle(RADIUS);
+    this.setDepth(3);
   }
 
   public kick(vector: Phaser.Math.Vector2, power: number): this {
@@ -74,5 +73,9 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
 
   public get position(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2(this.x, this.y);
+  }
+
+  public get bounds(): Phaser.Geom.Circle {
+    return new Phaser.Geom.Circle(this.x, this.y, BALL_RADIUS);
   }
 }

@@ -1,4 +1,4 @@
-import GameScene from "../scenes/GameScene";
+import PitchScene from "../scenes/PitchScene";
 import { PlayerProps, PlayerRoles } from "../types";
 import {
   DELTA,
@@ -7,19 +7,20 @@ import {
   KICKING_RANGE,
   KEEPER_RANGE,
   INTERCEPT_RANGE,
+  MESSAGE_SUPPORT_ATTACKER,
+  MESSAGE_GO_HOME,
+  PLAYER_RADIUS,
 } from "../constants";
 import { Info, Team } from "./";
-import Regulator from "./Regulator";
 
 export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
-  public scene: GameScene;
+  public scene: PitchScene;
   public body: Phaser.Physics.Arcade.Body;
 
   private _team: Team;
   private _homeDefault: Phaser.Math.Vector2;
   private _home: Phaser.Math.Vector2;
   private _target: Phaser.Math.Vector2;
-  private _regulator: Regulator;
   private _seekOn: boolean;
   private _persuitOn: boolean;
   private _interposeOn: boolean;
@@ -35,8 +36,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     home: Phaser.Math.Vector2,
     team: Team
   ) {
-    const RADIUS = 8;
-
     super(scene, x, y, "sprites", frame);
 
     this._seekOn = false;
@@ -44,7 +43,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this._interposeOn = false;
     this._team = team;
     this._home = this._homeDefault = this._target = home;
-    this._regulator = new Regulator(this.scene);
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
@@ -54,8 +52,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       index,
     });
     this.setName(name);
-    this.setSize(RADIUS * 2, RADIUS * 2);
-    this.setCircle(RADIUS);
+    this.setSize(PLAYER_RADIUS * 2, PLAYER_RADIUS * 2);
+    this.setCircle(PLAYER_RADIUS);
     this.setDepth(3);
 
     const info = new Info(this.scene, index, team.isLeft);
@@ -135,17 +133,17 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       this.team.setSupportingPlayer(supportingPlayer);
 
       if (supportingPlayer) {
-        this.scene.events.emit("supportAttacker", supportingPlayer);
+        this.scene.events.emit(MESSAGE_SUPPORT_ATTACKER, supportingPlayer);
       }
     } else if (
       supportingPlayer &&
       supportingPlayer !== this.team.supportingPlayer
     ) {
       if (this.team.supportingPlayer) {
-        this.scene.events.emit("goHome", supportingPlayer);
+        this.scene.events.emit(MESSAGE_GO_HOME, supportingPlayer);
       } else {
         this.team.setSupportingPlayer(supportingPlayer);
-        this.scene.events.emit("supportAttacker", supportingPlayer);
+        this.scene.events.emit(MESSAGE_SUPPORT_ATTACKER, supportingPlayer);
       }
     }
   }
@@ -186,7 +184,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this;
   }
 
-  public setHomeIfWaiting(): this {
+  public sendHomeIfWaiting(): this {
     return this;
   }
 
@@ -232,10 +230,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get isAtTarget(): boolean {
     return this.isCloseToTarget();
-  }
-
-  public get isReadyForNextKick(): boolean {
-    return this._regulator.isReady;
   }
 
   public get seekOn(): boolean {
@@ -328,14 +322,16 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get isAheadOfAttacker(): boolean {
     return (
-      Math.abs(this.x - this.team.goalOpp.position.x) <
-      Math.abs(this.team.controllingPlayer.x - this.team.goalOpp.position.x)
+      Math.abs(this.x - this.team.goalOpponents.position.x) <
+      Math.abs(
+        this.team.controllingPlayer.x - this.team.goalOpponents.position.x
+      )
     );
   }
 
   public get isInHotPosition(): boolean {
     return (
-      Math.abs(this.y - this.team.goalOpp.position.y) <
+      Math.abs(this.y - this.team.goalOpponents.position.y) <
       this.scene.pitch.width / 3
     );
   }

@@ -13,3 +13,6 @@ export const INTERCEPT_RANGE = 256;
 export const KEEPER_RANGE = 20;
 export const BALL_DRAG = 0.3;
 export const BALL_BOUNCE = 0.5;
+export const BALL_RADIUS = 8;
+export const PLAYER_RADIUS = 8;
+export const BOUNDS_BORDER = 64;

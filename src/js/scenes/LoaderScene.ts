@@ -30,18 +30,18 @@ export default class LoaderScene extends Phaser.Scene {
       .on(
         Phaser.Core.Events.BLUR,
         function () {
-          this.scene.get("game").scene.pause();
+          this.scene.get("pitch").scene.pause();
         },
         this
       )
       .on(
         Phaser.Core.Events.FOCUS,
         function () {
-          this.scene.get("game").scene.resume();
+          this.scene.get("pitch").scene.resume();
         },
         this
       );
 
-    this.scene.start("game");
+    this.scene.start("pitch");
   }
 }
