@@ -27,18 +27,13 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       120
     );
 
-    const ss = new Phaser.GameObjects.Rectangle(
+    const back = new Phaser.GameObjects.Rectangle(
       this.scene,
-      this._bounds.x,
-      this._bounds.y,
-      this._bounds.width,
-      this._bounds.height,
-      0xff00ff
-    )
-      .setDepth(20)
-      .setOrigin(0, 0);
-
-    this.scene.add.existing(ss);
+      x - facing * 60,
+      y,
+      8,
+      128
+    );
 
     const left = new Phaser.GameObjects.Rectangle(
       this.scene,
@@ -47,13 +42,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       60,
       8
     );
-    const back = new Phaser.GameObjects.Rectangle(
-      this.scene,
-      x - facing * 60,
-      y,
-      8,
-      128
-    );
+
     const right = new Phaser.GameObjects.Rectangle(
       this.scene,
       x - facing * 34,
@@ -61,6 +50,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       60,
       8
     );
+
     const rightPost = new Phaser.GameObjects.Ellipse(
       this.scene,
       x - facing * 4,
@@ -68,6 +58,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       8,
       8
     );
+
     const leftPost = new Phaser.GameObjects.Ellipse(
       this.scene,
       x - facing * 4,
@@ -76,19 +67,16 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       8
     );
 
-    this.scene.physics.world.enable(back, Phaser.Physics.Arcade.STATIC_BODY);
-    this.scene.physics.world.enable(left, Phaser.Physics.Arcade.STATIC_BODY);
-    this.scene.physics.world.enable(right, Phaser.Physics.Arcade.STATIC_BODY);
     this.scene.physics.world.enable(
-      leftPost,
-      Phaser.Physics.Arcade.STATIC_BODY
-    );
-    this.scene.physics.world.enable(
-      rightPost,
+      [back, left, right, leftPost, rightPost],
       Phaser.Physics.Arcade.STATIC_BODY
     );
 
-    this.add(back).add(left).add(leftPost).add(right).add(rightPost);
+    this.add(back);
+    this.add(left);
+    this.add(leftPost);
+    this.add(right);
+    this.add(rightPost);
   }
 
   public incrementScore() {
@@ -107,12 +95,8 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     return this._bounds;
   }
 
-  public get width(): number {
-    return this._image.width;
-  }
-
   public get height(): number {
-    return this._image.height - 2 * 8;
+    return this.bounds.height;
   }
 
   public get position(): Phaser.Math.Vector2 {
@@ -122,7 +106,7 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     );
   }
 
-  public get ballInGoal(): boolean {
+  public get isBallInGoal(): boolean {
     return Phaser.Geom.Intersects.CircleToRectangle(
       this.scene.ball.bounds,
       this.bounds

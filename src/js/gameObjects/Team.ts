@@ -193,7 +193,7 @@ export default class Team extends Phaser.GameObjects.Group {
     attempts: number = 3
   ): any[] {
     const target = this.goalOpponents.position.clone();
-    const targetHeght = this.goalOpponents.height - this.ball.height;
+    const targetHeght = this.goalOpponents.bounds.height - this.ball.height;
 
     while (attempts--) {
       target.y =

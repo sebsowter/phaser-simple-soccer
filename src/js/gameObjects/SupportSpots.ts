@@ -61,7 +61,7 @@ export default class SupportSpots {
     const PASS_SAFE_STRENGTH = 2;
     const CAN_SHOOT_STRENGTH = 1;
     const CONTROLLLING_DISTANCE_STRENGTH = 2;
-    const OPTIMAL_DISTANCE = 256;
+    const OPTIMAL_DISTANCE = 192;
 
     let bestScore: number = 0;
     let bestIndex: number = 0;
@@ -101,7 +101,7 @@ export default class SupportSpots {
         }
       }
 
-      this._circles[index].setScale(spot.score / 4);
+      this._circles[index].setFillStyle(0x999999).setScale(spot.score / 4);
 
       if (spot.score > bestScore) {
         bestScore = spot.score;
@@ -110,8 +110,7 @@ export default class SupportSpots {
     });
 
     this._supportSpot = this._spots[bestIndex];
-
-    this._circles[bestIndex].setScale(this._supportSpot.score / 2);
+    this._circles[bestIndex].setFillStyle(0x00ff00);
 
     return this._supportSpot;
   }

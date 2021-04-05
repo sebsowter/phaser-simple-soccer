@@ -124,14 +124,6 @@ export default class PlayerField extends PlayerBase {
         this.setSeekOn(false);
         break;
 
-      case PlayerFieldStates.KickBall:
-        this.setPersuitOn(false);
-        break;
-
-      case PlayerFieldStates.Dribble:
-        this.setPersuitOn(false);
-        break;
-
       case PlayerFieldStates.ReceiveBall:
         this.setSeekOn(false);
         this.setPersuitOn(false);
@@ -169,7 +161,6 @@ export default class PlayerField extends PlayerBase {
       case PlayerFieldStates.Dribble:
       case PlayerFieldStates.KickBall:
         this.team.setControllingPlayer(this);
-        this.setPersuitOn(true);
         break;
 
       case PlayerFieldStates.ReceiveBall:
@@ -259,12 +250,12 @@ export default class PlayerField extends PlayerBase {
         break;
 
       case PlayerFieldStates.Wait:
-        if (!this.isAtTarget) {
-          this.setSeekOn(true);
-        } else {
+        if (this.isAtTarget) {
           this.setSeekOn(false);
           this.setVelocity(0, 0);
           this.trackBall();
+        } else {
+          this.setSeekOn(true);
         }
 
         if (
@@ -273,14 +264,13 @@ export default class PlayerField extends PlayerBase {
           this.isAheadOfAttacker
         ) {
           this.team.requestPass(this);
-        } else if (this.scene.gameOn) {
-          if (
-            this.isClosestPlayerToBall &&
-            !this.team.receivingPlayer &&
-            !this.scene.goalkeeperHasBall
-          ) {
-            this.setState(PlayerFieldStates.ChaseBall);
-          }
+        } else if (
+          this.scene.gameOn &&
+          this.isClosestPlayerToBall &&
+          !this.team.receivingPlayer &&
+          !this.scene.goalkeeperHasBall
+        ) {
+          this.setState(PlayerFieldStates.ChaseBall);
         }
         break;
 
@@ -296,6 +286,7 @@ export default class PlayerField extends PlayerBase {
           this.scene.goalkeeperHasBall ||
           ballDot < 0
         ) {
+          this.trackBall();
           this.setState(PlayerFieldStates.ChaseBall);
         } else {
           const shootPower = MAX_SHOT_POWER * ballDot;
@@ -307,6 +298,7 @@ export default class PlayerField extends PlayerBase {
           if (canShoot || Math.random() < POT_SHOT_CHANCE) {
             const kickTarget = shootTarget || this.team.goalOpponents.position;
 
+            this.trackBall();
             this.scene.ball.kick(
               kickTarget.clone().subtract(this.scene.ball.position).normalize(),
               shootPower
@@ -322,6 +314,7 @@ export default class PlayerField extends PlayerBase {
             );
 
             if (this.isThreatened && canPass) {
+              this.trackBall();
               this.scene.ball.kick(
                 passTarget
                   .clone()
@@ -337,6 +330,7 @@ export default class PlayerField extends PlayerBase {
               );
               this.findSupport();
             } else {
+              this.trackBall();
               this.findSupport();
               this.setState(PlayerFieldStates.Dribble);
             }
@@ -361,6 +355,7 @@ export default class PlayerField extends PlayerBase {
           this.scene.ball.kick(this.team.goalHome.facing, DRIBBLE_POWER_GOAL);
         }
 
+        this.trackBall();
         this.setState(PlayerFieldStates.ChaseBall);
         break;
 

@@ -28,6 +28,7 @@ export default class Pitch extends Phaser.GameObjects.Group {
       this._image.width,
       BOUNDS_BORDER
     ).setOrigin(0, 0);
+
     const bottom = new Phaser.GameObjects.Rectangle(
       this.scene,
       0,
@@ -35,6 +36,7 @@ export default class Pitch extends Phaser.GameObjects.Group {
       this._image.width,
       BOUNDS_BORDER
     ).setOrigin(0, 0);
+
     const leftTop = new Phaser.GameObjects.Rectangle(
       this.scene,
       0,
@@ -42,6 +44,7 @@ export default class Pitch extends Phaser.GameObjects.Group {
       BOUNDS_BORDER,
       (this._image.height - 120) / 2
     ).setOrigin(0, 0);
+
     const leftBottom = new Phaser.GameObjects.Rectangle(
       this.scene,
       0,
@@ -49,6 +52,7 @@ export default class Pitch extends Phaser.GameObjects.Group {
       BOUNDS_BORDER,
       (this._image.height - 120) / 2
     ).setOrigin(0, 1);
+
     const rightTop = new Phaser.GameObjects.Rectangle(
       this.scene,
       this._image.width,
@@ -56,6 +60,7 @@ export default class Pitch extends Phaser.GameObjects.Group {
       BOUNDS_BORDER,
       (this._image.height - 120) / 2
     ).setOrigin(1, 0);
+
     const rightBottom = new Phaser.GameObjects.Rectangle(
       this.scene,
       this._image.width,
@@ -64,28 +69,17 @@ export default class Pitch extends Phaser.GameObjects.Group {
       (this._image.height - 120) / 2
     ).setOrigin(1, 1);
 
-    this.scene.physics.world.enable(leftTop, Phaser.Physics.Arcade.STATIC_BODY);
     this.scene.physics.world.enable(
-      leftBottom,
+      [top, bottom, leftTop, leftBottom, rightTop, rightBottom],
       Phaser.Physics.Arcade.STATIC_BODY
     );
-    this.scene.physics.world.enable(
-      rightTop,
-      Phaser.Physics.Arcade.STATIC_BODY
-    );
-    this.scene.physics.world.enable(
-      rightBottom,
-      Phaser.Physics.Arcade.STATIC_BODY
-    );
-    this.scene.physics.world.enable(top, Phaser.Physics.Arcade.STATIC_BODY);
-    this.scene.physics.world.enable(bottom, Phaser.Physics.Arcade.STATIC_BODY);
 
-    this.add(rightTop)
-      .add(rightBottom)
-      .add(leftTop)
-      .add(leftBottom)
-      .add(top)
-      .add(bottom);
+    this.add(top);
+    this.add(bottom);
+    this.add(rightTop);
+    this.add(rightBottom);
+    this.add(leftTop);
+    this.add(leftBottom);
   }
 
   public get bounds(): Phaser.Geom.Rectangle {
@@ -93,18 +87,18 @@ export default class Pitch extends Phaser.GameObjects.Group {
   }
 
   public get width(): any {
-    return this._bounds.width;
+    return this.bounds.width;
   }
 
   public get height(): any {
-    return this._bounds.height;
+    return this.bounds.height;
   }
 
   public get x(): number {
-    return this._bounds.x;
+    return this.bounds.x;
   }
 
   public get y(): number {
-    return this._bounds.y;
+    return this.bounds.y;
   }
 }

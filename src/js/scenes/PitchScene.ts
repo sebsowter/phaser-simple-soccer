@@ -31,56 +31,53 @@ export default class PitchScene extends Phaser.Scene {
 
   public create() {
     this._pitch = new Pitch(this);
-    this._ball = new Ball(
-      this,
-      this._pitch.x + this._pitch.width / 2,
-      this._pitch.y + this._pitch.height / 2
-    );
+    this._score = new Score(this, this.game.renderer.width / 2, 12);
     this._goalA = new Goal(
       this,
-      this._pitch.x,
-      this._pitch.y + this._pitch.height / 2,
+      this.pitch.x,
+      this.pitch.y + this.pitch.height / 2,
       1
     );
     this._goalB = new Goal(
       this,
-      this._pitch.x + this._pitch.width,
-      this._pitch.y + this._pitch.height / 2,
+      this.pitch.x + this.pitch.width,
+      this.pitch.y + this.pitch.height / 2,
       -1
     );
-    this._teamA = new Team(this, 1, true, this._goalB, this._goalA);
-    this._teamB = new Team(this, 2, false, this._goalA, this._goalB);
-    this._teamA.setOpponents(this._teamB);
-    this._teamB.setOpponents(this._teamA);
-    this._score = new Score(this, this.game.renderer.width / 2, 12);
+    this._ball = new Ball(
+      this,
+      this.pitch.x + this.pitch.width / 2,
+      this.pitch.y + this.pitch.height / 2
+    );
+    this._teamA = new Team(this, 1, true, this.goalB, this.goalA);
+    this._teamB = new Team(this, 2, false, this.goalA, this.goalB);
     this._circle = this.add.circle(0, 0, 8, 0x00ffff);
 
-    this.physics.add.collider(this._ball, [
-      this._goalA,
-      this._goalB,
-      this._pitch,
-    ]);
+    this.teamA.setOpponents(this.teamB);
+    this.teamB.setOpponents(this.teamA);
+
+    this.physics.add.collider(this._ball, [this.goalA, this.goalB, this.pitch]);
     this.physics.add.collider(
-      [this._teamA, this._teamB],
-      [this._goalA, this._goalB, this._pitch]
+      [this.teamA, this.teamB],
+      [this.goalA, this.goalB, this.pitch]
     );
-    this.physics.add.collider(this._teamA, this._teamB);
-    this.physics.add.collider(this._teamB, this._teamA);
+    this.physics.add.collider(this.teamA, this.teamB);
+    this.physics.add.collider(this.teamB, this.teamA);
   }
 
   public update() {
     if (!this.gameOn) {
-      if (!this._goalA.ballInGoal && !this._goalB.ballInGoal) {
+      if (!this.goalA.isBallInGoal && !this.goalB.isBallInGoal) {
         this.setGameOn(true);
       }
     } else {
-      if (this._goalA.ballInGoal) {
-        this._goalA.incrementScore();
-        this._score.setText(`${this._goalB.scored}-${this._goalA.scored}`);
+      if (this.goalA.isBallInGoal) {
+        this.goalA.incrementScore();
+        this._score.setText(`${this.goalB.scored}-${this.goalA.scored}`);
         this.setGameOn(false);
-      } else if (this._goalB.ballInGoal) {
-        this._goalB.incrementScore();
-        this._score.setText(`${this._goalB.scored}-${this._goalA.scored}`);
+      } else if (this.goalB.isBallInGoal) {
+        this.goalB.incrementScore();
+        this._score.setText(`${this.goalB.scored}-${this.goalA.scored}`);
         this.setGameOn(false);
       }
     }
