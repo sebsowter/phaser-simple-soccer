@@ -9,7 +9,9 @@ export default class PitchScene extends Phaser.Scene {
   private _goalB: Goal;
   private _pitch: Pitch;
   private _score: Score;
-  public _circle: any;
+  public _circle1: any;
+  public _circle2: any;
+  public _circle3: any;
 
   constructor() {
     super({
@@ -24,6 +26,7 @@ export default class PitchScene extends Phaser.Scene {
       {
         goalkeeperHasBall: false,
         gameOn: false,
+        ballInGoal: false,
       },
       false
     );
@@ -31,7 +34,6 @@ export default class PitchScene extends Phaser.Scene {
 
   public create() {
     this._pitch = new Pitch(this);
-    this._score = new Score(this, this.game.renderer.width / 2, 12);
     this._goalA = new Goal(
       this,
       this.pitch.x,
@@ -51,7 +53,10 @@ export default class PitchScene extends Phaser.Scene {
     );
     this._teamA = new Team(this, 1, true, this.goalB, this.goalA);
     this._teamB = new Team(this, 2, false, this.goalA, this.goalB);
-    this._circle = this.add.circle(0, 0, 8, 0x00ffff);
+    this._circle1 = this.add.circle(0, 0, 8, 0x00ffff);
+    this._circle2 = this.add.circle(0, 0, 8, 0xff00ff);
+    this._circle3 = this.add.circle(0, 0, 8, 0xffff00);
+    this._score = new Score(this, this.game.renderer.width / 2, 12);
 
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
@@ -66,19 +71,21 @@ export default class PitchScene extends Phaser.Scene {
   }
 
   public update() {
-    if (!this.gameOn) {
+    const ballInGoal = this.data.get("ballInGoal");
+
+    if (!ballInGoal) {
       if (!this.goalA.isBallInGoal && !this.goalB.isBallInGoal) {
-        this.setGameOn(true);
+        this.data.set("ballInGoal", true);
       }
     } else {
       if (this.goalA.isBallInGoal) {
         this.goalA.incrementScore();
         this._score.setText(`${this.goalB.scored}-${this.goalA.scored}`);
-        this.setGameOn(false);
+        this.data.set("ballInGoal", false);
       } else if (this.goalB.isBallInGoal) {
         this.goalB.incrementScore();
         this._score.setText(`${this.goalB.scored}-${this.goalA.scored}`);
-        this.setGameOn(false);
+        this.data.set("ballInGoal", false);
       }
     }
 

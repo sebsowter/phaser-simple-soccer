@@ -16,7 +16,7 @@ import {
   PlayerKeeper,
   Goal,
   Ball,
-} from ".";
+} from "./";
 
 export enum TeamStates {
   PrepareForKickOff,
@@ -130,6 +130,7 @@ export default class Team extends Phaser.GameObjects.Group {
     switch (this.state) {
       case TeamStates.PrepareForKickOff:
         if (this.allPlayersAtHome && this.opponents.allPlayersAtHome) {
+          //if (this.scene.gameOn) {
           this.setState(TeamStates.Defending);
         }
         break;
@@ -146,13 +147,6 @@ export default class Team extends Phaser.GameObjects.Group {
         }
         break;
     }
-
-    if (this.controllingPlayer) {
-      this.scene._circle.setPosition(
-        this.controllingPlayer.target.x,
-        this.controllingPlayer.target.y
-      );
-    }
   }
 
   public kickOff() {
@@ -167,16 +161,12 @@ export default class Team extends Phaser.GameObjects.Group {
       });
   }
 
-  public sendAllPlayersToHome() {
-    this.players.forEach((player: PlayerBase) => {
-      this.scene.events.emit(MESSAGE_GO_HOME, player);
-    });
-  }
-
   public updateHomeTargets(regions: number[]) {
-    this.players.forEach((player: PlayerBase, index: number) => {
-      player.setHome(getRegionPos(regions[index]));
-    });
+    this.players
+      //.filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
+      .forEach((player: PlayerBase, index: number) => {
+        player.setHome(getRegionPos(regions[index]));
+      });
   }
 
   public updateTargetsOfWaitingPlayers() {
@@ -229,16 +219,20 @@ export default class Team extends Phaser.GameObjects.Group {
     const passLocal = new Phaser.Math.Vector2(distanceToReceiver, 0).rotate(
       Phaser.Math.Angle.BetweenPoints(this.ball.position, receiver.position)
     );
-    const passTargets = [
-      passLocal.clone().rotate(-passAngle).add(this.ball.position),
-      passLocal,
-      passLocal.clone().rotate(passAngle).add(this.ball.position),
-    ];
+    const passCenter = passLocal.clone().add(this.ball.position);
+    const passLeft = passLocal
+      .clone()
+      .rotate(-passAngle)
+      .add(this.ball.position);
+    const passRight = passLocal
+      .clone()
+      .rotate(passAngle)
+      .add(this.ball.position);
 
     let shortestDistanceToGoal = 10000;
     let passTarget = null;
 
-    passTargets.forEach((target: Phaser.Math.Vector2) => {
+    [passLeft, passCenter, passRight].forEach((target: Phaser.Math.Vector2) => {
       const distanceToGoal = Math.abs(target.x - this.goalOpponents.position.x);
 
       if (
@@ -270,6 +264,7 @@ export default class Team extends Phaser.GameObjects.Group {
   ): any[] {
     let closestToGoalSoFar = 1000;
     let target = null;
+    let targets = null;
     let receiver = null;
 
     this.players
@@ -278,7 +273,7 @@ export default class Team extends Phaser.GameObjects.Group {
         const distance = passer.position.distance(player.position);
 
         if (distance > minimumPassingDistance) {
-          const [canPass, passTarget] = this.getBestPassToReceiver(
+          const [canPass, passTarget, passTargets] = this.getBestPassToReceiver(
             player,
             power
           );
@@ -292,13 +287,14 @@ export default class Team extends Phaser.GameObjects.Group {
               closestToGoalSoFar = distance;
               receiver = player;
               target = passTarget;
+              targets = passTargets;
             }
           }
         }
       });
 
     if (receiver) {
-      return [true, receiver, target];
+      return [true, receiver, target, targets];
     }
 
     return [false, null, null];

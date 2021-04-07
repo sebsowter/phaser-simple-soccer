@@ -22,9 +22,9 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
 
     this._bounds = new Phaser.Geom.Rectangle(
       x + (facing > 0 ? -64 : 16),
-      y - 60,
+      y - 56,
       48,
-      120
+      112
     );
 
     const back = new Phaser.GameObjects.Rectangle(

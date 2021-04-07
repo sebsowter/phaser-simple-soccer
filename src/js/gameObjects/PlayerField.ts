@@ -58,7 +58,6 @@ export default class PlayerField extends PlayerBase {
             player === this &&
             this.state !== PlayerFieldStates.SupportAttacker
           ) {
-            this.setTarget(this.team.getSupportSpot());
             this.setState(PlayerFieldStates.SupportAttacker);
           }
         },
@@ -68,7 +67,6 @@ export default class PlayerField extends PlayerBase {
         MESSAGE_GO_HOME,
         function (player: PlayerBase) {
           if (player === this) {
-            this.setDefaultHomeRegion();
             this.setState(PlayerFieldStates.ReturnToHome);
           }
         },
@@ -147,9 +145,9 @@ export default class PlayerField extends PlayerBase {
       case PlayerFieldStates.ReturnToHome:
         this.setSeekOn(true);
 
-        if (this.target.distance(this.home) > 96) {
-          this.setTarget(this.home);
-        }
+        //if (this.target.distance(this.home) > 96) {
+        this.setTarget(this.home);
+        //}
         break;
 
       case PlayerFieldStates.Wait:
@@ -188,8 +186,6 @@ export default class PlayerField extends PlayerBase {
   }
 
   public preUpdate(time: number, delta: number) {
-    super.preUpdate(time, delta);
-
     switch (this.state) {
       case PlayerFieldStates.ChaseBall:
         if (this.isBallWithinKickingRange) {
@@ -236,11 +232,11 @@ export default class PlayerField extends PlayerBase {
         if (this.scene.gameOn) {
           if (
             this.isClosestPlayerToBall &&
-            !this.team.receivingPlayer &&
+            this.team.receivingPlayer === null &&
             !this.scene.goalkeeperHasBall
           ) {
             this.setState(PlayerFieldStates.ChaseBall);
-          } else if (this.isCloseToTarget(50)) {
+          } else if (this.isCloseToHome(64)) {
             this.setTarget(this.position);
             this.setState(PlayerFieldStates.Wait);
           }
@@ -300,7 +296,7 @@ export default class PlayerField extends PlayerBase {
 
             this.trackBall();
             this.scene.ball.kick(
-              kickTarget.clone().subtract(this.scene.ball.position).normalize(),
+              kickTarget.clone().subtract(this.scene.ball.position),
               shootPower
             );
             this.setState(PlayerFieldStates.Wait);
@@ -316,10 +312,7 @@ export default class PlayerField extends PlayerBase {
             if (this.isThreatened && canPass) {
               this.trackBall();
               this.scene.ball.kick(
-                passTarget
-                  .clone()
-                  .subtract(this.scene.ball.position)
-                  .normalize(),
+                passTarget.clone().subtract(this.scene.ball.position),
                 passPower
               );
               this.setState(PlayerFieldStates.Wait);
@@ -376,6 +369,8 @@ export default class PlayerField extends PlayerBase {
         }
         break;
     }
+
+    super.preUpdate(time, delta);
   }
 
   public sendHomeIfWaiting(): this {
@@ -384,6 +379,7 @@ export default class PlayerField extends PlayerBase {
       this.state === PlayerFieldStates.ReturnToHome
     ) {
       this.setTarget(this.home);
+      this.setState(PlayerFieldStates.ReturnToHome);
     }
 
     return this;

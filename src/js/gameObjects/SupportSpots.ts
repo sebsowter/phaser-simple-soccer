@@ -1,4 +1,12 @@
-import { MAX_SHOT_POWER, MAX_PASS_POWER } from "../constants";
+import {
+  MAX_SHOT_POWER,
+  MAX_PASS_POWER,
+  SUPPORT_SPOT_UPDATE_FREQUENCY,
+  SUPPORT_SPOT_PASS_SAFE_STRENGTH,
+  SUPPORT_SPOT_CAN_SHOOT_STRENGTH,
+  SUPPORT_SPOT_CONTROLLLING_DISTANCE_STRENGTH,
+  SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE,
+} from "../constants";
 import { PitchScene } from "../scenes";
 import { Spot, Team } from "./";
 
@@ -11,7 +19,7 @@ export default class SupportSpots {
   constructor(scene: PitchScene, team: Team, isLeft: boolean) {
     const CENTER_X = isLeft ? 64 + 96 * 9 : 64 + 96 * 3;
     const CENTER_Y = 352;
-    const GAP_X = 96;
+    const GAP_X = 88;
     const GAP_Y = 88;
     const COLS = 5;
     const ROWS = 6;
@@ -42,7 +50,7 @@ export default class SupportSpots {
 
     // Calculate spots every two seconds.
     scene.time.addEvent({
-      delay: 2000,
+      delay: SUPPORT_SPOT_UPDATE_FREQUENCY,
       loop: true,
       callbackScope: this,
       callback: function () {
@@ -58,11 +66,6 @@ export default class SupportSpots {
   }
 
   public calculateSupportSpot(): Spot {
-    const PASS_SAFE_STRENGTH = 2;
-    const CAN_SHOOT_STRENGTH = 1;
-    const CONTROLLLING_DISTANCE_STRENGTH = 2;
-    const OPTIMAL_DISTANCE = 192;
-
     let bestScore: number = 0;
     let bestIndex: number = 0;
 
@@ -79,23 +82,24 @@ export default class SupportSpots {
           MAX_PASS_POWER
         )
       ) {
-        spot.score += PASS_SAFE_STRENGTH;
+        spot.score += SUPPORT_SPOT_PASS_SAFE_STRENGTH;
       }
 
       const [canShoot] = this._team.canShoot(spot, MAX_SHOT_POWER);
 
       if (canShoot) {
-        spot.score += CAN_SHOOT_STRENGTH;
+        spot.score += SUPPORT_SPOT_CAN_SHOOT_STRENGTH;
       }
 
       if (this._team.isInControl) {
         const distance = this._team.controllingPlayer.position.distance(spot);
-        const normal = Math.abs(OPTIMAL_DISTANCE - distance);
+        const normal = Math.abs(SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE - distance);
 
-        if (normal < OPTIMAL_DISTANCE) {
+        if (normal < SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE) {
           const score =
-            (CONTROLLLING_DISTANCE_STRENGTH * (OPTIMAL_DISTANCE - normal)) /
-            OPTIMAL_DISTANCE;
+            (SUPPORT_SPOT_CONTROLLLING_DISTANCE_STRENGTH *
+              (SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE - normal)) /
+            SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE;
 
           spot.score += score;
         }
@@ -110,6 +114,7 @@ export default class SupportSpots {
     });
 
     this._supportSpot = this._spots[bestIndex];
+
     this._circles[bestIndex].setFillStyle(0x00ff00);
 
     return this._supportSpot;

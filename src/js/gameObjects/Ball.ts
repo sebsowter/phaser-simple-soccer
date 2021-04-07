@@ -62,8 +62,8 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     const velocity = this.body.velocity.clone();
 
     for (let i = 0; i < time / (DELTA * 1000); i++) {
-      velocity.x *= Math.pow(this.body.drag.x, DELTA);
-      velocity.y *= Math.pow(this.body.drag.y, DELTA);
+      velocity.x *= Math.pow(BALL_DRAG, DELTA);
+      velocity.y *= Math.pow(BALL_DRAG, DELTA);
       position.x += velocity.x * DELTA;
       position.y += velocity.y * DELTA;
     }

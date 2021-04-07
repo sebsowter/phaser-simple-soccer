@@ -116,9 +116,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         temp2
       );
 
-      this.setRotation(
-        Phaser.Math.Angle.BetweenPoints(this.position, this.scene.ball.position)
-      );
+      this.trackBall();
       this.setVelocity(
         speed * delta * Math.cos(interposeAngle),
         speed * delta * Math.sin(interposeAngle)
@@ -155,7 +153,9 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public setHome(vector: Phaser.Math.Vector2): this {
+    console.log("setHome", this.team.name, this.index, vector);
     this._home = vector;
+    //console.log("home", vector);
 
     return this;
   }
