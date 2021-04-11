@@ -1,8 +1,5 @@
-import { FPS, DELTA, BALL_DRAG, BALL_BOUNCE, BALL_RADIUS } from "../constants";
+import { BALL_DRAG, BALL_BOUNCE, BALL_RADIUS } from "../constants";
 import { PitchScene } from "../scenes";
-import { positionInFuture } from "../utils";
-
-const drag = 320;
 
 export default class Ball extends Phaser.Physics.Arcade.Image {
   public scene: PitchScene;
@@ -17,49 +14,50 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     this.setSize(BALL_RADIUS * 2, BALL_RADIUS * 2);
     this.setCircle(BALL_RADIUS);
     this.setBounce(BALL_BOUNCE, BALL_BOUNCE);
-    //this.setDrag(drag, drag);
     this.setFrictionX(0);
-    //this.setDamping(true);
     this.setDepth(3);
-    console.log("this", this);
-  }
-
-  public get position(): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2(this.x, this.y);
-  }
-
-  public get bounds(): Phaser.Geom.Circle {
-    return new Phaser.Geom.Circle(this.x, this.y, BALL_RADIUS);
   }
 
   public preUpdate(time: number, delta: number) {
-    //const friction = drag;
-    //const norm = this.body.velocity.clone().normalize();
-    //const velocity = this.body.velocity.clone();
-    //console.log(velocity.x);
-    //console.log("this.body", this.body.speed);
-    //velocity.x += 1 * drag;
-    //velocity.y += norm.y * drag;
-    //velocity.x = Math.abs(velocity.x) > -drag ? velocity.x : 0;
-    //velocity.y = Math.abs(velocity.y) > friction ? velocity.y : 0;
-    //console.log("ScalarToVectorx", this.body.velocity.x);
-    const norm = this.body.velocity.clone().normalize();
-    const velocity = new Phaser.Math.Vector2(
-      this.body.velocity.x - norm.x * ((delta / 1000) * -BALL_DRAG),
-      this.body.velocity.y - norm.y * ((delta / 1000) * -BALL_DRAG)
+    const direction = this.body.velocity.clone().normalize();
+    const dragForce = (delta / 1000) * BALL_DRAG;
+    const drag = new Phaser.Math.Vector2(
+      direction.x * dragForce,
+      direction.y * dragForce
     );
+    const velocity = this.body.velocity.clone().add(drag);
 
-    this.setVelocity(
-      this.body.speed < 4 ? 0 : velocity.x,
-      this.body.speed < 4 ? 0 : velocity.y
-    );
-    //super.preUpdate(time, delta);
+    if (
+      Math.abs(velocity.x) > Math.abs(this.body.velocity.x) ||
+      Phaser.Math.Fuzzy.Equal(velocity.x, 0, 0.5)
+    ) {
+      velocity.x = 0;
+    }
+
+    if (
+      Math.abs(velocity.y) > Math.abs(this.body.velocity.y) ||
+      Phaser.Math.Fuzzy.Equal(velocity.y, 0, 0.5)
+    ) {
+      velocity.y = 0;
+    }
+
+    this.setVelocity(velocity.x, velocity.y);
+  }
+
+  public addNoiseToKick(
+    position: Phaser.Math.Vector2,
+    target: Phaser.Math.Vector2
+  ): Phaser.Math.Vector2 {
+    const random = new Phaser.Math.RandomDataGenerator();
+    const displacement = Math.PI * 0.01 * random.between(-1, 1);
+
+    return target.subtract(position).rotate(displacement).add(position);
   }
 
   public kick(vector: Phaser.Math.Vector2, power: number): this {
-    const velocity = vector.clone().normalize();
+    const direction = vector.clone().normalize();
 
-    this.setVelocity(velocity.x * power, velocity.y * power);
+    this.setVelocity(direction.x * power, direction.y * power);
 
     return this;
   }
@@ -80,7 +78,7 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   }
 
   public timeToCoverDistance(distance: number, velocity: number): number {
-    var term = velocity * velocity + 2 * distance * BALL_DRAG;
+    const term = velocity * velocity + 2 * distance * BALL_DRAG;
 
     if (term <= 0) {
       return -1;
@@ -90,31 +88,25 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
   }
 
   public futurePosition(time: number): Phaser.Math.Vector2 {
+    const direction = this.body.velocity.clone().normalize();
     const dragForce = 0.5 * BALL_DRAG * time * time;
-    const dragDirection = this.body.velocity.clone().normalize();
     const drag = new Phaser.Math.Vector2(
-      dragForce * dragDirection.x,
-      dragForce * dragDirection.y
+      direction.x * dragForce,
+      direction.y * dragForce
+    );
+    const velocity = new Phaser.Math.Vector2(
+      this.body.velocity.x * time,
+      this.body.velocity.y * time
     );
 
-    return new Phaser.Math.Vector2(
-      this.position.x + this.body.velocity.x * time + drag.x,
-      this.position.y + this.body.velocity.y * time + drag.y
-    );
+    return this.position.add(velocity).add(drag);
   }
 
-  public futurePosition2(
-    seconds: number,
-    delta: number = DELTA
-  ): Phaser.Math.Vector2 {
-    const position = new Phaser.Math.Vector2(
-      positionInFuture(this.body.velocity.x, seconds, this.body.drag.x, delta),
-      positionInFuture(this.body.velocity.y, seconds, this.body.drag.y, delta)
-    );
+  public get position(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(this.x, this.y);
+  }
 
-    return new Phaser.Math.Vector2(
-      this.position.x + position.x,
-      this.position.y + position.y
-    );
+  public get bounds(): Phaser.Geom.Circle {
+    return new Phaser.Geom.Circle(this.x, this.y, BALL_RADIUS);
   }
 }

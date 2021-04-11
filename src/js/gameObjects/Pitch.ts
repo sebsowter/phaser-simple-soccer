@@ -69,17 +69,17 @@ export default class Pitch extends Phaser.GameObjects.Group {
       (this._image.height - 120) / 2
     ).setOrigin(1, 1);
 
-    this.scene.physics.world.enable(
-      [top, bottom, leftTop, leftBottom, rightTop, rightBottom],
-      Phaser.Physics.Arcade.STATIC_BODY
-    );
-
     this.add(top);
     this.add(bottom);
     this.add(rightTop);
     this.add(rightBottom);
     this.add(leftTop);
     this.add(leftBottom);
+
+    this.scene.physics.world.enable(
+      [top, bottom, leftTop, leftBottom, rightTop, rightBottom],
+      Phaser.Physics.Arcade.STATIC_BODY
+    );
   }
 
   public get bounds(): Phaser.Geom.Rectangle {
@@ -100,5 +100,12 @@ export default class Pitch extends Phaser.GameObjects.Group {
 
   public get y(): number {
     return this.bounds.y;
+  }
+
+  public get midpoint(): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(
+      this.x + this.width / 2,
+      this.y + this.height / 2
+    );
   }
 }

@@ -1,5 +1,5 @@
 import Team from "./Team";
-import { PlayerProps } from "../types";
+import { PlayerProps, PlayerEvent } from "../types";
 import {
   MAX_SHOT_POWER,
   MAX_PASS_POWER,
@@ -8,11 +8,6 @@ import {
   MIN_PASS_DISTANCE,
   DRIBBLE_POWER,
   DRIBBLE_POWER_GOAL,
-  MESSAGE_RECEIVE_BALL,
-  MESSAGE_SUPPORT_ATTACKER,
-  MESSAGE_GO_HOME,
-  MESSAGE_WAIT,
-  MESSAGE_PASS_TO_ME,
 } from "../constants";
 import PlayerBase from "./PlayerBase";
 
@@ -42,7 +37,7 @@ export default class PlayerField extends PlayerBase {
 
     this.scene.events
       .on(
-        MESSAGE_RECEIVE_BALL,
+        PlayerEvent.RECEIVE_BALL,
         function (player: PlayerBase, target: Phaser.Math.Vector2) {
           if (player === this) {
             this.setTarget(target);
@@ -52,7 +47,7 @@ export default class PlayerField extends PlayerBase {
         this
       )
       .on(
-        MESSAGE_SUPPORT_ATTACKER,
+        PlayerEvent.SUPPORT_ATTACKER,
         function (player: PlayerBase) {
           if (
             player === this &&
@@ -64,7 +59,7 @@ export default class PlayerField extends PlayerBase {
         this
       )
       .on(
-        MESSAGE_GO_HOME,
+        PlayerEvent.GO_HOME,
         function (player: PlayerBase) {
           if (player === this) {
             this.setState(PlayerFieldStates.ReturnToHome);
@@ -73,7 +68,7 @@ export default class PlayerField extends PlayerBase {
         this
       )
       .on(
-        MESSAGE_WAIT,
+        PlayerEvent.WAIT,
         function (player: PlayerBase) {
           if (player === this) {
             this.setState(PlayerFieldStates.Wait);
@@ -82,7 +77,7 @@ export default class PlayerField extends PlayerBase {
         this
       )
       .on(
-        MESSAGE_PASS_TO_ME,
+        PlayerEvent.PASS_TO_ME,
         function (player: PlayerBase, receiver: PlayerBase) {
           if (player === this && this.isBallWithinKickingRange) {
             this.team.ball.kick(
@@ -93,7 +88,7 @@ export default class PlayerField extends PlayerBase {
               MAX_PASS_POWER
             );
             this.scene.events.emit(
-              MESSAGE_RECEIVE_BALL,
+              PlayerEvent.RECEIVE_BALL,
               receiver,
               receiver.position
             );
@@ -292,7 +287,10 @@ export default class PlayerField extends PlayerBase {
           );
 
           if (canShoot || Math.random() < POT_SHOT_CHANCE) {
-            const kickTarget = shootTarget || this.team.goalOpponents.position;
+            const kickTarget = this.scene.ball.addNoiseToKick(
+              this.scene.ball.position,
+              shootTarget || this.team.goalOpponents.position
+            );
 
             this.trackBall();
             this.scene.ball.kick(
@@ -310,14 +308,19 @@ export default class PlayerField extends PlayerBase {
             );
 
             if (this.isThreatened && canPass) {
+              const kickTarget = this.scene.ball.addNoiseToKick(
+                this.scene.ball.position,
+                passTarget
+              );
+
               this.trackBall();
               this.scene.ball.kick(
-                passTarget.clone().subtract(this.scene.ball.position),
+                kickTarget.clone().subtract(this.scene.ball.position),
                 passPower
               );
               this.setState(PlayerFieldStates.Wait);
               this.scene.events.emit(
-                MESSAGE_RECEIVE_BALL,
+                PlayerEvent.RECEIVE_BALL,
                 passReceiver,
                 passTarget
               );

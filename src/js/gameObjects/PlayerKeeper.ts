@@ -1,10 +1,5 @@
-import { PlayerProps } from "../types";
-import {
-  MAX_PASS_POWER,
-  MIN_PASS_DISTANCE,
-  MESSAGE_GO_HOME,
-  MESSAGE_RECEIVE_BALL,
-} from "../constants";
+import { PlayerProps, PlayerEvent } from "../types";
+import { MAX_PASS_POWER, MIN_PASS_DISTANCE } from "../constants";
 import { Team, PlayerBase } from "./";
 
 export enum PlayerKeeperStates {
@@ -30,7 +25,7 @@ export default class PlayerKeeper extends PlayerBase {
 
     this.scene.events
       .on(
-        MESSAGE_RECEIVE_BALL,
+        PlayerEvent.RECEIVE_BALL,
         function (player: PlayerBase) {
           if (player === this) {
             this.setState(PlayerKeeperStates.InterceptBall);
@@ -39,10 +34,9 @@ export default class PlayerKeeper extends PlayerBase {
         this
       )
       .on(
-        MESSAGE_GO_HOME,
+        PlayerEvent.GO_HOME,
         function (player: PlayerBase) {
           if (player === this) {
-            this.setDefaultHomeRegion();
             this.setState(PlayerKeeperStates.ReturnToHome);
           }
         },
@@ -145,7 +139,7 @@ export default class PlayerKeeper extends PlayerBase {
           );
           this.scene.setGoalkeeperHasBall(false);
           this.scene.events.emit(
-            MESSAGE_RECEIVE_BALL,
+            PlayerEvent.RECEIVE_BALL,
             passReceiver,
             passTarget
           );
@@ -158,6 +152,6 @@ export default class PlayerKeeper extends PlayerBase {
   }
 
   public get isAtHome(): boolean {
-    return this.isCloseToHome(192);
+    return this.isCloseToHome(128);
   }
 }

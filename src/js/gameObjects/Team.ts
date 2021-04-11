@@ -1,12 +1,12 @@
 import {
-  MAX_PASS_POWER,
-  MESSAGE_GO_HOME,
-  MESSAGE_PASS_TO_ME,
-  players,
-  teams,
-} from "../constants";
+  PlayerProps,
+  PlayerRegions,
+  PlayerRoles,
+  PlayerEvent,
+  TeamProps,
+} from "../types";
+import { MAX_PASS_POWER, SHOOT_ATTEMPTS } from "../constants";
 import { getRegionPos } from "../utils";
-import { PlayerProps, PlayerRegions, TeamProps, PlayerRoles } from "../types";
 import { PitchScene } from "../scenes";
 import {
   SupportSpots,
@@ -42,7 +42,7 @@ export default class Team extends Phaser.GameObjects.Group {
 
   constructor(
     scene: Phaser.Scene,
-    teamId: number,
+    team: TeamProps,
     isLeft: boolean,
     goalOpponents: Goal,
     goalHome: Goal
@@ -51,37 +51,30 @@ export default class Team extends Phaser.GameObjects.Group {
 
     this.scene.add.existing(this);
 
-    const team: TeamProps = teams.find((team: TeamProps) => team.id === teamId);
-
     this._goalOpponents = goalOpponents;
     this._goalHome = goalHome;
     this._isLeft = isLeft;
     this._regions = team.regions;
     this._spots = new SupportSpots(this.scene, this, isLeft);
-    this._players = team.players
-      .map((id: number) => {
-        return players.find((player: PlayerProps) => player.id === id);
-      })
-      .map((props: PlayerProps, index: number) => {
-        const PlayerEntity =
-          props.role === PlayerRoles.Goalkeeper ? PlayerKeeper : PlayerField;
-        const position = getRegionPos(this._regions.defending[index]);
+    this._players = team.players.map((props: PlayerProps, index: number) => {
+      const PlayerClass =
+        props.role === PlayerRoles.Goalkeeper ? PlayerKeeper : PlayerField;
+      const position = getRegionPos(this._regions.defending[index]);
+      const player = new PlayerClass(
+        this.scene,
+        position.x,
+        position.y,
+        team.frame,
+        props,
+        index,
+        team.name,
+        position,
+        this
+      );
 
-        return new PlayerEntity(
-          this.scene,
-          position.x + (-16 + Math.random() * 32),
-          position.y + (-16 + Math.random() * 32),
-          team.frame,
-          props,
-          index,
-          team.name,
-          position,
-          this
-        );
-      });
-
-    this._players.forEach((player: PlayerBase) => {
       this.add(player);
+
+      return player;
     });
 
     this.setName(team.name);
@@ -127,17 +120,9 @@ export default class Team extends Phaser.GameObjects.Group {
   public preUpdate() {
     this.setClosestPlayer(this.findClosestPlayer());
 
-    if (this.isInControl) {
-      this.scene._circle1.setPosition(
-        this.controllingPlayer.target.x,
-        this.controllingPlayer.target.y
-      );
-    }
-
     switch (this.state) {
       case TeamStates.PrepareForKickOff:
         if (this.allPlayersAtHome && this.opponents.allPlayersAtHome) {
-          //if (this.scene.gameOn) {
           this.setState(TeamStates.Defending);
         }
         break;
@@ -164,7 +149,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this.players
       .filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
       .forEach((player: PlayerBase) => {
-        this.scene.events.emit(MESSAGE_GO_HOME, player);
+        this.scene.events.emit(PlayerEvent.GO_HOME, player);
       });
   }
 
@@ -187,7 +172,7 @@ export default class Team extends Phaser.GameObjects.Group {
   public canShoot(
     position: Phaser.Math.Vector2,
     power: number,
-    attempts: number = 3
+    attempts: number = SHOOT_ATTEMPTS
   ): any[] {
     const target = this.goalOpponents.position.clone();
     const targetHeght = this.goalOpponents.bounds.height - this.ball.height;
@@ -195,7 +180,7 @@ export default class Team extends Phaser.GameObjects.Group {
     while (attempts--) {
       target.y =
         this.goalOpponents.position.y -
-        targetHeght / 2 +
+        targetHeght * 0.5 +
         Math.random() * targetHeght;
 
       if (
@@ -271,7 +256,6 @@ export default class Team extends Phaser.GameObjects.Group {
   ): any[] {
     let closestToGoalSoFar = 1000;
     let target = null;
-    let targets = null;
     let receiver = null;
 
     this.players
@@ -280,7 +264,7 @@ export default class Team extends Phaser.GameObjects.Group {
         const distance = passer.position.distance(player.position);
 
         if (distance > minimumPassingDistance) {
-          const [canPass, passTarget, passTargets] = this.getBestPassToReceiver(
+          const [canPass, passTarget] = this.getBestPassToReceiver(
             player,
             power
           );
@@ -294,14 +278,13 @@ export default class Team extends Phaser.GameObjects.Group {
               closestToGoalSoFar = distance;
               receiver = player;
               target = passTarget;
-              targets = passTargets;
             }
           }
         }
       });
 
     if (receiver) {
-      return [true, receiver, target, targets];
+      return [true, receiver, target];
     }
 
     return [false, null, null];
@@ -318,7 +301,7 @@ export default class Team extends Phaser.GameObjects.Group {
       )
     ) {
       this.scene.events.emit(
-        MESSAGE_PASS_TO_ME,
+        PlayerEvent.PASS_TO_ME,
         this.controllingPlayer,
         requester
       );

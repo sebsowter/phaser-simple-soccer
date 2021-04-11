@@ -1,5 +1,5 @@
 import PitchScene from "../scenes/PitchScene";
-import { PlayerProps, PlayerRoles } from "../types";
+import { PlayerProps, PlayerRoles, PlayerEvent } from "../types";
 import {
   DELTA,
   PLAYER_COMFORT_DISTANCE,
@@ -7,8 +7,6 @@ import {
   KICKING_RANGE,
   KEEPER_RANGE,
   INTERCEPT_RANGE,
-  MESSAGE_SUPPORT_ATTACKER,
-  MESSAGE_GO_HOME,
   PLAYER_RADIUS,
 } from "../constants";
 import { Info, Team } from "./";
@@ -38,6 +36,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   ) {
     super(scene, x, y, "sprites", frame);
 
+    const info = new Info(this, index, team.isLeft);
+
     this._seekOn = false;
     this._persuitOn = false;
     this._interposeOn = false;
@@ -46,6 +46,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
+    this.scene.add.existing(info);
 
     this.setData({
       ...props,
@@ -55,59 +56,40 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this.setSize(PLAYER_RADIUS * 2, PLAYER_RADIUS * 2);
     this.setCircle(PLAYER_RADIUS);
     this.setDepth(3);
-
-    const info = new Info(this.scene, index, team.isLeft);
-
-    this.scene.events.on(
-      "postupdate",
-      function () {
-        info.x = this.x;
-        info.y = this.y;
-      },
-      this
-    );
   }
 
   public preUpdate(time: number, delta: number) {
-    const speed = this.getData("speed");
+    const velocity = new Phaser.Math.Vector2();
+    const speed = new Phaser.Math.Vector2(this.speedPerFrame * delta, 0);
 
     if (this.seekOn) {
-      const targetAngle = Phaser.Math.Angle.BetweenPoints(
-        this.position,
-        this.target
+      velocity.add(
+        speed
+          .clone()
+          .rotate(Phaser.Math.Angle.BetweenPoints(this.position, this.target))
       );
+    }
 
-      this.setRotation(targetAngle);
-      this.setVelocity(
-        speed * delta * Math.cos(targetAngle),
-        speed * delta * Math.sin(targetAngle)
-      );
-    } else if (this.persuitOn) {
+    if (this.persuitOn) {
       const ballSpeed = this.scene.ball.body.speed;
       const magnitude = this.scene.ball.position
         .clone()
         .subtract(this.position)
         .length();
-      const distance = this.scene.ball.position.clone().distance(this.position);
-      const lookAheadTime = ballSpeed !== 0 ? distance / ballSpeed : 0;
-      console.log("magnitude", distance);
-      console.log("ballSpeed", ballSpeed);
-      console.log(" magnitude / ballSpeed", distance / ballSpeed);
-      console.log("lookAheadTime", lookAheadTime);
-      const fPos = this.scene.ball.futurePosition(lookAheadTime);
+      const lookAheadTime = ballSpeed !== 0 ? magnitude / ballSpeed : 0;
+      const futurePosition = this.scene.ball.futurePosition(lookAheadTime);
 
-      this.scene._circle2.setPosition(fPos.x, fPos.y);
+      this.setTarget(futurePosition);
+      this.trackTarget();
 
-      this.setTarget(fPos);
-
-      const targetAngle2 = Phaser.Math.Angle.BetweenPoints(this.position, fPos);
-
-      this.setRotation(targetAngle2);
-      this.setVelocity(
-        speed * delta * Math.cos(targetAngle2),
-        speed * delta * Math.sin(targetAngle2)
+      velocity.add(
+        speed
+          .clone()
+          .rotate(Phaser.Math.Angle.BetweenPoints(this.position, this.target))
       );
-    } else if (this.interposeOn) {
+    }
+
+    if (this.interposeOn) {
       this.setTarget(this.rearInterposeTarget);
 
       const distance = this.position.distance(this.target);
@@ -124,11 +106,11 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       );
 
       this.trackBall();
-      this.setVelocity(
-        speed * delta * Math.cos(interposeAngle),
-        speed * delta * Math.sin(interposeAngle)
-      );
+
+      velocity.add(speed.clone().rotate(interposeAngle));
     }
+
+    this.setVelocity(velocity.x, velocity.y);
   }
 
   public findSupport() {
@@ -138,17 +120,17 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       this.team.setSupportingPlayer(supportingPlayer);
 
       if (supportingPlayer) {
-        this.scene.events.emit(MESSAGE_SUPPORT_ATTACKER, supportingPlayer);
+        this.scene.events.emit(PlayerEvent.SUPPORT_ATTACKER, supportingPlayer);
       }
     } else if (
       supportingPlayer &&
       supportingPlayer !== this.team.supportingPlayer
     ) {
       if (this.team.supportingPlayer) {
-        this.scene.events.emit(MESSAGE_GO_HOME, supportingPlayer);
+        this.scene.events.emit(PlayerEvent.GO_HOME, supportingPlayer);
       } else {
         this.team.setSupportingPlayer(supportingPlayer);
-        this.scene.events.emit(MESSAGE_SUPPORT_ATTACKER, supportingPlayer);
+        this.scene.events.emit(PlayerEvent.SUPPORT_ATTACKER, supportingPlayer);
       }
     }
   }
@@ -203,6 +185,12 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public isPositionInFrontOfPlayer(position: Phaser.Math.Vector2): boolean {
     return position.clone().subtract(this.position).dot(this.facing) > 0;
+  }
+
+  public trackTarget(): this {
+    this.rotateToTarget(this.target);
+
+    return this;
   }
 
   public trackBall(): this {
@@ -299,7 +287,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public get isBallWithinRangeForIntercept(): boolean {
     return (
-      this.team.goalHome.position.distance(this.scene.ball.position) <=
+      this.team.goalHome.position.distance(this.scene.ball.position) <
       INTERCEPT_RANGE
     );
   }
@@ -344,8 +332,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public get rearInterposeTarget(): Phaser.Math.Vector2 {
     const x = this.team.goalHome.position.x;
     const y =
-      this.scene.pitch.height / 2 +
-      this.scene.pitch.y -
+      this.team.goalHome.position.y -
       this.team.goalHome.height / 2 +
       this.team.goalHome.height *
         ((this.scene.ball.position.y - this.scene.pitch.y) /

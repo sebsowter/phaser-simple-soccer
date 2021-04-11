@@ -38,10 +38,9 @@ export default class SupportSpots {
         );
 
         this._spots.push(new Spot(position.x, position.y));
-
         this._circles.push(
           scene.add
-            .circle(position.x, position.y, 8, 0x00ff00, 0.25)
+            .circle(position.x, position.y, 8, 0x00ff00)
             .setDepth(1)
             .setVisible(false)
         );
@@ -105,9 +104,7 @@ export default class SupportSpots {
         }
       }
 
-      this._circles[index]
-        .setFillStyle(0x00ff00, 0.25)
-        .setScale(spot.score / 4);
+      this._circles[index].setAlpha(0.25).setScale(spot.score / 4);
 
       if (spot.score > bestScore) {
         bestScore = spot.score;
@@ -116,8 +113,7 @@ export default class SupportSpots {
     });
 
     this._supportSpot = this._spots[bestIndex];
-
-    this._circles[bestIndex].setFillStyle(0x00ff00);
+    this._circles[bestIndex].setAlpha(1);
 
     return this._supportSpot;
   }

@@ -8,25 +8,6 @@ import {
   TeamStates,
 } from "../gameObjects";
 
-export const setText = (selector: string, value: string) => {
-  document.querySelector(selector).innerHTML = value;
-};
-
-export const positionInFuture = (
-  velocity: number,
-  seconds: number,
-  drag: number,
-  delta: number
-) => {
-  const steps = seconds / delta;
-  const dragPerStep = Math.pow(drag, delta);
-  const velocityPerStep = velocity * delta;
-
-  return (
-    (velocityPerStep * (1 - Math.pow(dragPerStep, steps))) / (1 - dragPerStep)
-  );
-};
-
 export const getRegionPos = (region: number): Phaser.Math.Vector2 => {
   const COLS = 6;
   const WIDTH = 192;
@@ -36,6 +17,10 @@ export const getRegionPos = (region: number): Phaser.Math.Vector2 => {
     BORDER + WIDTH / 2 + (region % COLS) * WIDTH,
     BORDER + WIDTH / 2 + Math.floor(region / COLS) * WIDTH
   );
+};
+
+export const setText = (selector: string, value: string) => {
+  document.querySelector(selector).innerHTML = value;
 };
 
 export const updateUi = (scene: PitchScene) => {
