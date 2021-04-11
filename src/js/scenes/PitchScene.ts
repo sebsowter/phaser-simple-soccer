@@ -51,23 +51,43 @@ export default class PitchScene extends Phaser.Scene {
       this.pitch.x + this.pitch.width / 2,
       this.pitch.y + this.pitch.height / 2
     );
+    const ball = new Ball(
+      this,
+      this.pitch.x + this.pitch.width / 2,
+      this.pitch.y + this.pitch.height / 2
+    );
+    ball.kick(new Phaser.Math.Vector2(1, 0), 320);
     this._teamA = new Team(this, 1, true, this.goalB, this.goalA);
     this._teamB = new Team(this, 2, false, this.goalA, this.goalB);
     this._circle1 = this.add.circle(0, 0, 8, 0x00ffff);
     this._circle2 = this.add.circle(0, 0, 8, 0xff00ff);
     this._circle3 = this.add.circle(0, 0, 8, 0xffff00);
+    const pos1 = ball.futurePosition(0.5);
+    const pos2 = ball.futurePosition(1);
+    const pos3 = ball.futurePosition(2);
+    console.log("0", ball.timeToCoverDistance(400, 320));
+    console.log("0", ball.timeToCoverDistance(300, 320));
+    console.log("0", ball.timeToCoverDistance(250, 320));
+    console.log("1", ball.timeToCoverDistance(200, 320));
+    console.log("2", ball.timeToCoverDistance(198, 320));
+    console.log("2", ball.timeToCoverDistance(196, 320));
+    console.log("2", ball.timeToCoverDistance(192, 320));
+    console.log("3", ball.timeToCoverDistance(100, 320));
+    //this._circle1.setPosition(pos1.x, pos1.y + 40);
+    //this._circle2.setPosition(pos2.x, pos2.y + 80);
+    //this._circle3.setPosition(pos3.x, pos3.y + 120);
     this._score = new Score(this, this.game.renderer.width / 2, 12);
 
     this.teamA.setOpponents(this.teamB);
     this.teamB.setOpponents(this.teamA);
 
+    this.physics.add.collider(this.teamA, this.teamB);
+    this.physics.add.collider(this.teamB, this.teamA);
     this.physics.add.collider(this._ball, [this.goalA, this.goalB, this.pitch]);
     this.physics.add.collider(
       [this.teamA, this.teamB],
       [this.goalA, this.goalB, this.pitch]
     );
-    this.physics.add.collider(this.teamA, this.teamB);
-    this.physics.add.collider(this.teamB, this.teamA);
   }
 
   public update() {

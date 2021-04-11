@@ -127,6 +127,13 @@ export default class Team extends Phaser.GameObjects.Group {
   public preUpdate() {
     this.setClosestPlayer(this.findClosestPlayer());
 
+    if (this.isInControl) {
+      this.scene._circle1.setPosition(
+        this.controllingPlayer.target.x,
+        this.controllingPlayer.target.y
+      );
+    }
+
     switch (this.state) {
       case TeamStates.PrepareForKickOff:
         if (this.allPlayersAtHome && this.opponents.allPlayersAtHome) {

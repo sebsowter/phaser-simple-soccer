@@ -19,8 +19,8 @@ export default class SupportSpots {
   constructor(scene: PitchScene, team: Team, isLeft: boolean) {
     const CENTER_X = isLeft ? 64 + 96 * 9 : 64 + 96 * 3;
     const CENTER_Y = 352;
-    const GAP_X = 88;
-    const GAP_Y = 88;
+    const GAP_X = 80;
+    const GAP_Y = 80;
     const COLS = 5;
     const ROWS = 6;
     const LENGTH = (COLS - 1) * GAP_X;
@@ -41,7 +41,7 @@ export default class SupportSpots {
 
         this._circles.push(
           scene.add
-            .circle(position.x, position.y, 8, 0x999999)
+            .circle(position.x, position.y, 8, 0x00ff00, 0.25)
             .setDepth(1)
             .setVisible(false)
         );
@@ -105,7 +105,9 @@ export default class SupportSpots {
         }
       }
 
-      this._circles[index].setFillStyle(0x999999).setScale(spot.score / 4);
+      this._circles[index]
+        .setFillStyle(0x00ff00, 0.25)
+        .setScale(spot.score / 4);
 
       if (spot.score > bestScore) {
         bestScore = spot.score;

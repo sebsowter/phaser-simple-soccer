@@ -88,8 +88,15 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         .clone()
         .subtract(this.position)
         .length();
-      const lookAheadTime = ballSpeed !== 0 ? magnitude / ballSpeed : 0;
+      const distance = this.scene.ball.position.clone().distance(this.position);
+      const lookAheadTime = ballSpeed !== 0 ? distance / ballSpeed : 0;
+      console.log("magnitude", distance);
+      console.log("ballSpeed", ballSpeed);
+      console.log(" magnitude / ballSpeed", distance / ballSpeed);
+      console.log("lookAheadTime", lookAheadTime);
       const fPos = this.scene.ball.futurePosition(lookAheadTime);
+
+      this.scene._circle2.setPosition(fPos.x, fPos.y);
 
       this.setTarget(fPos);
 
@@ -153,9 +160,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public setHome(vector: Phaser.Math.Vector2): this {
-    console.log("setHome", this.team.name, this.index, vector);
     this._home = vector;
-    //console.log("home", vector);
 
     return this;
   }

@@ -9,8 +9,8 @@ export default class Info extends Phaser.GameObjects.Container {
     this.add(
       new Phaser.GameObjects.Line(
         this.scene,
-        16,
-        0,
+        12,
+        4,
         0,
         0,
         16,
