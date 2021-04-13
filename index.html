@@ -2,130 +2,236 @@
 <html>
   <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-    <title>Phaser Football</title>
+    <title>Phaser Simple Soccer</title>
     <style>
       body {
         font-family: "Courier New", Courier, monospace;
-        background-color: #333333;
-        color: #cccccc;
+        font-size: 1em;
+        background-color: #333;
+        color: #ccc;
+      }
+
+      h1 {
+        margin: 0;
+      }
+
+      table {
+        font-size: 0.75rem;
+        border-collapse: collapse;
+      }
+
+      table th {
+        border: 1px solid #333;
+        background-color: #555;
+      }
+
+      table td {
+        text-align: center;
+        border: 1px solid #333;
+        background-color: #444;
       }
     </style>
   </head>
   <body>
+    <div>
+      <h1>Programming Game AI by Example: Simple Soccer</h1>
+    </div>
     <div id="phaser"></div>
     <div>
       <table>
         <thead>
-          <th style="color: red">Red</th>
-          <th style="color: blue">Blue</th>
+          <th>Pitch</th>
         </thead>
         <tr>
           <td>
-            <table width="400">
+            <table>
+              <thead>
+                <th width="150">gameOn</th>
+                <th width="150">goalkeeperHasBall</th>
+              </thead>
               <tr>
-                <td width="150">State:</td>
-                <td id="red-state">-</td>
-              </tr>
-              <tr>
-                <td>----</td>
-                <td>----</td>
-              </tr>
-              <tr>
-                <td width="150">Closest:</td>
-                <td id="red-closest">-</td>
-              </tr>
-              <tr>
-                <td width="150">Controlling:</td>
-                <td id="red-controlling">-</td>
-              </tr>
-              <tr>
-                <td width="150">Receiving:</td>
-                <td id="red-receiving">-</td>
-              </tr>
-              <tr>
-                <td width="150">Supporting:</td>
-                <td id="red-supporting">-</td>
-              </tr>
-              <tr>
-                <td>----</td>
-                <td>----</td>
-              </tr>
-              <tr>
-                <td width="150">Player 1:</td>
-                <td id="red-1">-</td>
-              </tr>
-              <tr>
-                <td>Player 2:</td>
-                <td id="red-2">-</td>
-              </tr>
-              <tr>
-                <td>Player 3:</td>
-                <td id="red-3">-</td>
-              </tr>
-              <tr>
-                <td>Player 4:</td>
-                <td id="red-4">-</td>
-              </tr>
-              <tr>
-                <td>Player 5:</td>
-                <td id="red-5">-</td>
+                <td id="pitch-gameon">-</td>
+                <td id="pitch-goalkeeper">-</td>
               </tr>
             </table>
           </td>
+        </tr>
+      </table>
+      <table>
+        <thead>
+          <th style="background-color: red">Red</th>
+        </thead>
+        <tr>
           <td>
-            <table width="400">
+            <table>
+              <thead>
+                <th width="100">Score</th>
+                <th width="150">State</th>
+                <th width="100">Closest</th>
+                <th width="100">Controlling</th>
+                <th width="100">Receiving</th>
+                <th width="100">Supporting</th>
+              </thead>
               <tr>
-                <td width="150">State:</td>
+                <td id="red-score">-</td>
+                <td id="red-state">-</td>
+                <td id="red-closest">-</td>
+                <td id="red-controlling">-</td>
+                <td id="red-receiving">-</td>
+                <td id="red-supporting">-</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <thead>
+                <th width="100">Player</th>
+                <th width="150">State</th>
+                <th width="100">persuitOn</th>
+                <th width="100">interposeOn</th>
+                <th width="100">seekOn</th>
+                <th width="100">isAtHome</th>
+                <th width="100">isAtTarget</th>
+              </thead>
+              <tr>
+                <td>1</td>
+                <td id="red-state-1">-</td>
+                <td id="red-persuit-1">-</td>
+                <td id="red-interpose-1">-</td>
+                <td id="red-seek-1">-</td>
+                <td id="red-home-1">-</td>
+                <td id="red-target-1">-</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td id="red-state-2">-</td>
+                <td id="red-persuit-2">-</td>
+                <td id="red-interpose-2">-</td>
+                <td id="red-seek-2">-</td>
+                <td id="red-home-2">-</td>
+                <td id="red-target-2">-</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td id="red-state-3">-</td>
+                <td id="red-persuit-3">-</td>
+                <td id="red-interpose-3">-</td>
+                <td id="red-seek-3">-</td>
+                <td id="red-home-3">-</td>
+                <td id="red-target-3">-</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td id="red-state-4">-</td>
+                <td id="red-persuit-4">-</td>
+                <td id="red-interpose-4">-</td>
+                <td id="red-seek-4">-</td>
+                <td id="red-home-4">-</td>
+                <td id="red-target-4">-</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td id="red-state-5">-</td>
+                <td id="red-persuit-5">-</td>
+                <td id="red-interpose-5">-</td>
+                <td id="red-seek-5">-</td>
+                <td id="red-home-5">-</td>
+                <td id="red-target-5">-</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <table>
+        <thead>
+          <th style="background-color: blue">Blue</th>
+        </thead>
+        <tr>
+          <td>
+            <table>
+              <thead>
+                <th width="100">Score</th>
+                <th width="150">State</th>
+                <th width="100">Closest</th>
+                <th width="100">Controlling</th>
+                <th width="100">Receiving</th>
+                <th width="100">Supporting</th>
+              </thead>
+              <tr>
+                <td id="blue-score">-</td>
                 <td id="blue-state">-</td>
-              </tr>
-              <tr>
-                <td>----</td>
-                <td>----</td>
-              </tr>
-              <tr>
-                <td width="150">Closest:</td>
                 <td id="blue-closest">-</td>
-              </tr>
-              <tr>
-                <td width="150">Controlling:</td>
                 <td id="blue-controlling">-</td>
-              </tr>
-              <tr>
-                <td width="150">Receiving:</td>
                 <td id="blue-receiving">-</td>
-              </tr>
-              <tr>
-                <td width="150">Supporting:</td>
                 <td id="blue-supporting">-</td>
               </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <table>
+              <thead>
+                <th width="100">Player</th>
+                <th width="150">State</th>
+                <th width="100">persuitOn</th>
+                <th width="100">interposeOn</th>
+                <th width="100">seekOn</th>
+                <th width="100">isAtHome</th>
+                <th width="100">isAtTarget</th>
+              </thead>
               <tr>
-                <td>----</td>
-                <td>----</td>
+                <td>1</td>
+                <td id="blue-state-1">-</td>
+                <td id="blue-persuit-1">-</td>
+                <td id="blue-interpose-1">-</td>
+                <td id="blue-seek-1">-</td>
+                <td id="blue-home-1">-</td>
+                <td id="blue-target-1">-</td>
               </tr>
               <tr>
-                <td width="150">Player 1:</td>
-                <td id="blue-1">-</td>
+                <td>2</td>
+                <td id="blue-state-2">-</td>
+                <td id="blue-persuit-2">-</td>
+                <td id="blue-interpose-2">-</td>
+                <td id="blue-seek-2">-</td>
+                <td id="blue-home-2">-</td>
+                <td id="blue-target-2">-</td>
               </tr>
               <tr>
-                <td>Player 2:</td>
-                <td id="blue-2">-</td>
+                <td>3</td>
+                <td id="blue-state-3">-</td>
+                <td id="blue-persuit-3">-</td>
+                <td id="blue-interpose-3">-</td>
+                <td id="blue-seek-3">-</td>
+                <td id="blue-home-3">-</td>
+                <td id="blue-target-3">-</td>
               </tr>
               <tr>
-                <td>Player 3:</td>
-                <td id="blue-3">-</td>
+                <td>4</td>
+                <td id="blue-state-4">-</td>
+                <td id="blue-persuit-4">-</td>
+                <td id="blue-interpose-4">-</td>
+                <td id="blue-seek-4">-</td>
+                <td id="blue-home-4">-</td>
+                <td id="blue-target-4">-</td>
               </tr>
               <tr>
-                <td>Player 4:</td>
-                <td id="blue-4">-</td>
-              </tr>
-              <tr>
-                <td>Player 5:</td>
-                <td id="blue-5">-</td>
+                <td>5</td>
+                <td id="blue-state-5">-</td>
+                <td id="blue-persuit-5">-</td>
+                <td id="blue-interpose-5">-</td>
+                <td id="blue-seek-5">-</td>
+                <td id="blue-home-5">-</td>
+                <td id="blue-target-5">-</td>
               </tr>
             </table>
           </td>
         </tr>
       </table>
     </div>
-  <script type="text/javascript" src="phaser.07dfc07d9c27937fece0.js"></script><script type="text/javascript" src="index.375a0632763d73a266ce.js"></script></body>
+  <script type="text/javascript" src="phaser.c6dd87ecdc42b0eabb21.js"></script><script type="text/javascript" src="index.da0b3abfbd8609501084.js"></script></body>
 </html>
