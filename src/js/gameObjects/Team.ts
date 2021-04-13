@@ -6,7 +6,6 @@ import {
   TeamProps,
 } from "../types";
 import { MAX_PASS_POWER, SHOOT_ATTEMPTS } from "../constants";
-import { getRegionPos } from "../utils";
 import { PitchScene } from "../scenes";
 import {
   SupportSpots,
@@ -59,11 +58,12 @@ export default class Team extends Phaser.GameObjects.Group {
     this._players = team.players.map((props: PlayerProps, index: number) => {
       const PlayerClass =
         props.role === PlayerRoles.Goalkeeper ? PlayerKeeper : PlayerField;
-      const position = getRegionPos(this._regions.defending[index]);
-      const player = new PlayerClass(
+      const position = this._regions.defending[index];
+
+      return new PlayerClass(
         this.scene,
-        position.x,
-        position.y,
+        position.x + (-64 + Math.random() * 128),
+        position.y + (-64 + Math.random() * 128),
         team.frame,
         props,
         index,
@@ -71,10 +71,10 @@ export default class Team extends Phaser.GameObjects.Group {
         position,
         this
       );
+    });
 
+    this._players.forEach((player: PlayerBase) => {
       this.add(player);
-
-      return player;
     });
 
     this.setName(team.name);
@@ -153,12 +153,10 @@ export default class Team extends Phaser.GameObjects.Group {
       });
   }
 
-  public updateHomeTargets(regions: number[]) {
-    this.players
-      //.filter((player: PlayerBase) => player.role !== PlayerRoles.Goalkeeper)
-      .forEach((player: PlayerBase, index: number) => {
-        player.setHome(getRegionPos(regions[index]));
-      });
+  public updateHomeTargets(regions: Phaser.Math.Vector2[]) {
+    this.players.forEach((player: PlayerBase, index: number) => {
+      player.setHome(regions[index]);
+    });
   }
 
   public updateTargetsOfWaitingPlayers() {

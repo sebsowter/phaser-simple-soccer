@@ -13,8 +13,8 @@ export enum PlayerRoles {
 }
 
 export interface PlayerRegions {
-  attacking: number[];
-  defending: number[];
+  attacking: Phaser.Math.Vector2[];
+  defending: Phaser.Math.Vector2[];
 }
 
 export interface PlayerProps {

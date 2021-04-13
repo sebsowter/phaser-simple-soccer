@@ -1,6 +1,17 @@
 import { TeamProps } from "../types";
 import { players } from "./players";
 
+const getRegionPos = (region: number): Phaser.Math.Vector2 => {
+  const COLS = 6;
+  const WIDTH = 192;
+  const BORDER = 64;
+
+  return new Phaser.Math.Vector2(
+    BORDER + WIDTH / 2 + (region % COLS) * WIDTH,
+    BORDER + WIDTH / 2 + Math.floor(region / COLS) * WIDTH
+  );
+};
+
 export const teams: TeamProps[] = [
   {
     id: 1,
@@ -8,8 +19,20 @@ export const teams: TeamProps[] = [
     name: "red",
     players,
     regions: {
-      defending: [6, 1, 13, 2, 14],
-      attacking: [6, 2, 14, 10, 9],
+      defending: [
+        getRegionPos(6),
+        getRegionPos(1),
+        getRegionPos(13),
+        getRegionPos(2),
+        getRegionPos(14),
+      ],
+      attacking: [
+        getRegionPos(6),
+        getRegionPos(2),
+        getRegionPos(14),
+        getRegionPos(10),
+        getRegionPos(9),
+      ],
     },
   },
   {
@@ -18,8 +41,20 @@ export const teams: TeamProps[] = [
     name: "blue",
     players,
     regions: {
-      defending: [11, 16, 4, 15, 3],
-      attacking: [11, 14, 3, 7, 8],
+      defending: [
+        getRegionPos(11),
+        getRegionPos(16),
+        getRegionPos(4),
+        getRegionPos(15),
+        getRegionPos(3),
+      ],
+      attacking: [
+        getRegionPos(11),
+        getRegionPos(14),
+        getRegionPos(3),
+        getRegionPos(7),
+        getRegionPos(8),
+      ],
     },
   },
 ];

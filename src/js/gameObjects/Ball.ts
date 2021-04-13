@@ -48,10 +48,9 @@ export default class Ball extends Phaser.Physics.Arcade.Image {
     position: Phaser.Math.Vector2,
     target: Phaser.Math.Vector2
   ): Phaser.Math.Vector2 {
-    const random = new Phaser.Math.RandomDataGenerator();
-    const displacement = Math.PI * 0.01 * random.between(-1, 1);
+    const displacement = Math.PI * 0.01 * (-1 + Math.random() * 2);
 
-    return target.subtract(position).rotate(displacement).add(position);
+    return target.clone().subtract(position).rotate(displacement).add(position);
   }
 
   public kick(vector: Phaser.Math.Vector2, power: number): this {

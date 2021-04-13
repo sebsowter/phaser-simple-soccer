@@ -63,6 +63,8 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     const speed = new Phaser.Math.Vector2(this.speedPerFrame * delta, 0);
 
     if (this.seekOn) {
+      this.trackTarget();
+
       velocity.add(
         speed
           .clone()
@@ -90,6 +92,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.interposeOn) {
+      this.trackBall();
       this.setTarget(this.rearInterposeTarget);
 
       const distance = this.position.distance(this.target);
@@ -104,8 +107,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         this.position,
         temp2
       );
-
-      this.trackBall();
 
       velocity.add(speed.clone().rotate(interposeAngle));
     }
