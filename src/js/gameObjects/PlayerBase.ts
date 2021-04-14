@@ -9,14 +9,13 @@ import {
   INTERCEPT_RANGE,
   PLAYER_RADIUS,
 } from "../constants";
-import { Info, Team } from "./";
+import { Info, SoccerTeam } from "./";
 
 export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   public scene: PitchScene;
   public body: Phaser.Physics.Arcade.Body;
 
-  private _team: Team;
-  private _homeDefault: Phaser.Math.Vector2;
+  private _team: SoccerTeam;
   private _home: Phaser.Math.Vector2;
   private _target: Phaser.Math.Vector2;
   private _seekOn: boolean;
@@ -32,7 +31,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     index: number,
     name: string,
     home: Phaser.Math.Vector2,
-    team: Team
+    team: SoccerTeam
   ) {
     super(scene, x, y, "sprites", frame);
 
@@ -42,7 +41,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     this._persuitOn = false;
     this._interposeOn = false;
     this._team = team;
-    this._home = this._homeDefault = this._target = home;
+    this._home = this._target = home;
 
     this.scene.add.existing(this);
     this.scene.physics.world.enable(this);
@@ -59,13 +58,13 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
   }
 
   public preUpdate(time: number, delta: number) {
-    const velocity = new Phaser.Math.Vector2();
+    const force = new Phaser.Math.Vector2();
     const speed = new Phaser.Math.Vector2(this.speedPerFrame * delta, 0);
 
     if (this.seekOn) {
       this.trackTarget();
 
-      velocity.add(
+      force.add(
         speed
           .clone()
           .rotate(Phaser.Math.Angle.BetweenPoints(this.position, this.target))
@@ -84,7 +83,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
       this.setTarget(futurePosition);
       this.trackTarget();
 
-      velocity.add(
+      force.add(
         speed
           .clone()
           .rotate(Phaser.Math.Angle.BetweenPoints(this.position, this.target))
@@ -108,10 +107,15 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
         temp2
       );
 
-      velocity.add(speed.clone().rotate(interposeAngle));
+      force.add(speed.clone().rotate(interposeAngle));
     }
 
-    this.setVelocity(velocity.x, velocity.y);
+    const velocity = speed.clone().rotate(force.angle());
+
+    this.setVelocity(
+      Math.min(force.x, velocity.x),
+      Math.min(force.y, velocity.y)
+    );
   }
 
   public findSupport() {
@@ -144,12 +148,6 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
 
   public setHome(vector: Phaser.Math.Vector2): this {
     this._home = vector;
-
-    return this;
-  }
-
-  public setDefaultHomeRegion(): this {
-    this._home = this._homeDefault;
 
     return this;
   }
@@ -246,7 +244,7 @@ export default class PlayerBase extends Phaser.Physics.Arcade.Sprite {
     return this._home;
   }
 
-  public get team(): Team {
+  public get team(): SoccerTeam {
     return this._team;
   }
 

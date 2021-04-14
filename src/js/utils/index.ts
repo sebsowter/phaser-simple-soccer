@@ -2,10 +2,10 @@ import { PlayerRoles } from "../types";
 import { PitchScene } from "../scenes";
 import {
   PlayerBase,
-  PlayerFieldStates,
-  PlayerKeeperStates,
-  Team,
-  TeamStates,
+  FieldPlayerStates,
+  GoalkeeperStates,
+  SoccerTeam,
+  SoccerTeamStates,
 } from "../gameObjects";
 
 export const setText = (selector: string, value: string) => {
@@ -13,13 +13,13 @@ export const setText = (selector: string, value: string) => {
 };
 
 export const updateUi = (scene: PitchScene) => {
-  function getTeamState(team: Team): string {
+  function getTeamState(team: SoccerTeam): string {
     switch (team.state) {
-      case TeamStates.Attacking:
+      case SoccerTeamStates.Attacking:
         return "Attacking";
-      case TeamStates.PrepareForKickOff:
+      case SoccerTeamStates.PrepareForKickOff:
         return "PrepareForKickOff";
-      case TeamStates.Defending:
+      case SoccerTeamStates.Defending:
         return "Defending";
     }
   }
@@ -27,31 +27,31 @@ export const updateUi = (scene: PitchScene) => {
   function getPlayerState(player: PlayerBase): string {
     if (player.role === PlayerRoles.Goalkeeper) {
       switch (player.state) {
-        case PlayerKeeperStates.InterceptBall:
+        case GoalkeeperStates.InterceptBall:
           return "InterceptBall";
-        case PlayerKeeperStates.PutBallBackInPlay:
+        case GoalkeeperStates.PutBallBackInPlay:
           return "PutBallBackInPlay";
-        case PlayerKeeperStates.ReturnToHome:
+        case GoalkeeperStates.ReturnToHome:
           return "ReturnToHome";
-        case PlayerKeeperStates.TendGoal:
+        case GoalkeeperStates.TendGoal:
           return "TendGoal";
       }
     }
 
     switch (player.state) {
-      case PlayerFieldStates.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         return "ChaseBall";
-      case PlayerFieldStates.Dribble:
+      case FieldPlayerStates.Dribble:
         return "Dribble";
-      case PlayerFieldStates.KickBall:
+      case FieldPlayerStates.KickBall:
         return "KickBall";
-      case PlayerFieldStates.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         return "ReceiveBall";
-      case PlayerFieldStates.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         return "ReturnToHome";
-      case PlayerFieldStates.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         return "Support";
-      case PlayerFieldStates.Wait:
+      case FieldPlayerStates.Wait:
         return "Wait";
     }
   }
@@ -61,7 +61,7 @@ export const updateUi = (scene: PitchScene) => {
   setText(`#red-score`, `${scene.goalA.scored}`);
   setText(`#blue-score`, `${scene.goalB.scored}`);
 
-  [scene.teamA, scene.teamB].forEach((team: Team) => {
+  [scene.teamA, scene.teamB].forEach((team: SoccerTeam) => {
     setText(`#${team.name}-state`, getTeamState(team));
     setText(
       `#${team.name}-closest`,

@@ -1,14 +1,20 @@
 import { updateUi } from "../utils";
-import { Ball, Goal, Team, Pitch, Score } from "../gameObjects";
+import {
+  SoccerBall,
+  Goal,
+  SoccerTeam,
+  SoccerPitch,
+  Score,
+} from "../gameObjects";
 import { teams } from "../constants";
 
 export default class PitchScene extends Phaser.Scene {
-  private _ball: Ball;
-  private _teamA: Team;
-  private _teamB: Team;
+  private _pitch: SoccerPitch;
+  private _ball: SoccerBall;
+  private _teamA: SoccerTeam;
+  private _teamB: SoccerTeam;
   private _goalA: Goal;
   private _goalB: Goal;
-  private _pitch: Pitch;
   private _score: Score;
 
   constructor() {
@@ -31,7 +37,7 @@ export default class PitchScene extends Phaser.Scene {
   }
 
   public create() {
-    this._pitch = new Pitch(this);
+    this._pitch = new SoccerPitch(this);
     this._goalA = new Goal(this, this.pitch.x, this.pitch.midpoint.y, 1);
     this._goalB = new Goal(
       this,
@@ -39,9 +45,13 @@ export default class PitchScene extends Phaser.Scene {
       this.pitch.midpoint.y,
       -1
     );
-    this._ball = new Ball(this, this.pitch.midpoint.x, this.pitch.midpoint.y);
-    this._teamA = new Team(this, teams[0], true, this.goalB, this.goalA);
-    this._teamB = new Team(this, teams[1], false, this.goalA, this.goalB);
+    this._ball = new SoccerBall(
+      this,
+      this.pitch.midpoint.x,
+      this.pitch.midpoint.y
+    );
+    this._teamA = new SoccerTeam(this, teams[0], true, this.goalB, this.goalA);
+    this._teamB = new SoccerTeam(this, teams[1], false, this.goalA, this.goalB);
     this._score = new Score(this, this.game.renderer.width / 2, 8);
 
     this.teamA.setOpponents(this.teamB);
@@ -92,19 +102,19 @@ export default class PitchScene extends Phaser.Scene {
     return this.data.get("gameOn");
   }
 
-  public get pitch(): Pitch {
+  public get pitch(): SoccerPitch {
     return this._pitch;
   }
 
-  public get ball(): Ball {
+  public get ball(): SoccerBall {
     return this._ball;
   }
 
-  public get teamA(): Team {
+  public get teamA(): SoccerTeam {
     return this._teamA;
   }
 
-  public get teamB(): Team {
+  public get teamB(): SoccerTeam {
     return this._teamB;
   }
 

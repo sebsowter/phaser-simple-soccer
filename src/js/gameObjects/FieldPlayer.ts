@@ -1,4 +1,4 @@
-import Team from "./Team";
+import SoccerTeam from "./SoccerTeam";
 import { PlayerProps, PlayerEvent } from "../types";
 import {
   MAX_SHOT_POWER,
@@ -11,7 +11,7 @@ import {
 } from "../constants";
 import PlayerBase from "./PlayerBase";
 
-export enum PlayerFieldStates {
+export enum FieldPlayerStates {
   Wait,
   ReceiveBall,
   KickBall,
@@ -21,7 +21,7 @@ export enum PlayerFieldStates {
   SupportAttacker,
 }
 
-export default class PlayerField extends PlayerBase {
+export default class FieldPlayer extends PlayerBase {
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -31,7 +31,7 @@ export default class PlayerField extends PlayerBase {
     index: number,
     name: string,
     home: Phaser.Math.Vector2,
-    team: Team
+    team: SoccerTeam
   ) {
     super(scene, x, y, frame, props, index, name, home, team);
 
@@ -41,7 +41,7 @@ export default class PlayerField extends PlayerBase {
         function (player: PlayerBase, target: Phaser.Math.Vector2) {
           if (player === this) {
             this.setTarget(target);
-            this.setState(PlayerFieldStates.ReceiveBall);
+            this.setState(FieldPlayerStates.ReceiveBall);
           }
         },
         this
@@ -51,9 +51,9 @@ export default class PlayerField extends PlayerBase {
         function (player: PlayerBase) {
           if (
             player === this &&
-            this.state !== PlayerFieldStates.SupportAttacker
+            this.state !== FieldPlayerStates.SupportAttacker
           ) {
-            this.setState(PlayerFieldStates.SupportAttacker);
+            this.setState(FieldPlayerStates.SupportAttacker);
           }
         },
         this
@@ -62,7 +62,7 @@ export default class PlayerField extends PlayerBase {
         PlayerEvent.GO_HOME,
         function (player: PlayerBase) {
           if (player === this) {
-            this.setState(PlayerFieldStates.ReturnToHome);
+            this.setState(FieldPlayerStates.ReturnToHome);
           }
         },
         this
@@ -71,7 +71,7 @@ export default class PlayerField extends PlayerBase {
         PlayerEvent.WAIT,
         function (player: PlayerBase) {
           if (player === this) {
-            this.setState(PlayerFieldStates.Wait);
+            this.setState(FieldPlayerStates.Wait);
           }
         },
         this
@@ -92,32 +92,32 @@ export default class PlayerField extends PlayerBase {
               receiver,
               receiver.position
             );
-            this.setState(PlayerFieldStates.Wait);
+            this.setState(FieldPlayerStates.Wait);
             this.findSupport();
           }
         },
         this
       );
 
-    this.setState(PlayerFieldStates.ReturnToHome);
+    this.setState(FieldPlayerStates.ReturnToHome);
   }
 
-  public setState(value: PlayerFieldStates): this {
+  public setState(value: FieldPlayerStates): this {
     switch (this.state) {
-      case PlayerFieldStates.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         this.setSeekOn(false);
         break;
 
-      case PlayerFieldStates.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         this.team.setSupportingPlayer(null);
         this.setSeekOn(false);
         break;
 
-      case PlayerFieldStates.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         this.setSeekOn(false);
         break;
 
-      case PlayerFieldStates.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         this.setSeekOn(false);
         this.setPersuitOn(false);
         this.team.setReceivingPlayer(null);
@@ -127,36 +127,36 @@ export default class PlayerField extends PlayerBase {
     super.setState(value);
 
     switch (value) {
-      case PlayerFieldStates.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         this.setSeekOn(true);
         this.setTarget(this.scene.ball.position);
         break;
 
-      case PlayerFieldStates.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         this.setSeekOn(true);
         this.setTarget(this.team.getSupportSpot());
         break;
 
-      case PlayerFieldStates.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         this.setSeekOn(true);
 
-        //if (this.target.distance(this.home) > 96) {
-        this.setTarget(this.home);
-        //}
+        if (!this.isCloseToHome(96)) {
+          this.setTarget(this.home);
+        }
         break;
 
-      case PlayerFieldStates.Wait:
+      case FieldPlayerStates.Wait:
         if (!this.scene.gameOn) {
           this.setTarget(this.home);
         }
         break;
 
-      case PlayerFieldStates.Dribble:
-      case PlayerFieldStates.KickBall:
+      case FieldPlayerStates.Dribble:
+      case FieldPlayerStates.KickBall:
         this.team.setControllingPlayer(this);
         break;
 
-      case PlayerFieldStates.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         this.team.setReceivingPlayer(this);
         this.team.setControllingPlayer(this);
 
@@ -182,19 +182,19 @@ export default class PlayerField extends PlayerBase {
 
   public preUpdate(time: number, delta: number) {
     switch (this.state) {
-      case PlayerFieldStates.ChaseBall:
+      case FieldPlayerStates.ChaseBall:
         if (this.isBallWithinKickingRange) {
-          this.setState(PlayerFieldStates.KickBall);
+          this.setState(FieldPlayerStates.KickBall);
         } else if (this.isClosestPlayerToBall) {
           this.setTarget(this.scene.ball.position);
         } else {
-          this.setState(PlayerFieldStates.ReturnToHome);
+          this.setState(FieldPlayerStates.ReturnToHome);
         }
         break;
 
-      case PlayerFieldStates.SupportAttacker:
+      case FieldPlayerStates.SupportAttacker:
         if (!this.team.isInControl) {
-          this.setState(PlayerFieldStates.ReturnToHome);
+          this.setState(FieldPlayerStates.ReturnToHome);
         } else {
           // If the best supporting spot changes, change the steering target.
           const supportSpot = this.team.getSupportSpot();
@@ -223,24 +223,24 @@ export default class PlayerField extends PlayerBase {
         }
         break;
 
-      case PlayerFieldStates.ReturnToHome:
+      case FieldPlayerStates.ReturnToHome:
         if (this.scene.gameOn) {
           if (
             this.isClosestPlayerToBall &&
             this.team.receivingPlayer === null &&
             !this.scene.goalkeeperHasBall
           ) {
-            this.setState(PlayerFieldStates.ChaseBall);
+            this.setState(FieldPlayerStates.ChaseBall);
           } else if (this.isCloseToHome(64)) {
             this.setTarget(this.position);
-            this.setState(PlayerFieldStates.Wait);
+            this.setState(FieldPlayerStates.Wait);
           }
         } else if (this.isAtTarget) {
-          this.setState(PlayerFieldStates.Wait);
+          this.setState(FieldPlayerStates.Wait);
         }
         break;
 
-      case PlayerFieldStates.Wait:
+      case FieldPlayerStates.Wait:
         if (this.isAtTarget) {
           this.setSeekOn(false);
           this.setVelocity(0, 0);
@@ -261,11 +261,11 @@ export default class PlayerField extends PlayerBase {
           !this.team.receivingPlayer &&
           !this.scene.goalkeeperHasBall
         ) {
-          this.setState(PlayerFieldStates.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         }
         break;
 
-      case PlayerFieldStates.KickBall:
+      case FieldPlayerStates.KickBall:
         const ballDot = this.facing
           .clone()
           .dot(
@@ -278,7 +278,7 @@ export default class PlayerField extends PlayerBase {
           ballDot < 0
         ) {
           this.trackBall();
-          this.setState(PlayerFieldStates.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         } else {
           const shootPower = MAX_SHOT_POWER * ballDot;
           const [canShoot, shootTarget] = this.team.canShoot(
@@ -297,7 +297,7 @@ export default class PlayerField extends PlayerBase {
               kickTarget.clone().subtract(this.scene.ball.position),
               shootPower
             );
-            this.setState(PlayerFieldStates.Wait);
+            this.setState(FieldPlayerStates.Wait);
             this.findSupport();
           } else {
             const passPower = MAX_PASS_POWER * ballDot;
@@ -318,7 +318,7 @@ export default class PlayerField extends PlayerBase {
                 kickTarget.clone().subtract(this.scene.ball.position),
                 passPower
               );
-              this.setState(PlayerFieldStates.Wait);
+              this.setState(FieldPlayerStates.Wait);
               this.scene.events.emit(
                 PlayerEvent.RECEIVE_BALL,
                 passReceiver,
@@ -328,13 +328,13 @@ export default class PlayerField extends PlayerBase {
             } else {
               this.trackBall();
               this.findSupport();
-              this.setState(PlayerFieldStates.Dribble);
+              this.setState(FieldPlayerStates.Dribble);
             }
           }
         }
         break;
 
-      case PlayerFieldStates.Dribble:
+      case FieldPlayerStates.Dribble:
         const { facing } = this.team.goalOpponents;
         const goalDot = this.team.goalOpponents.facing.clone().dot(this.facing);
 
@@ -352,12 +352,12 @@ export default class PlayerField extends PlayerBase {
         }
 
         this.trackBall();
-        this.setState(PlayerFieldStates.ChaseBall);
+        this.setState(FieldPlayerStates.ChaseBall);
         break;
 
-      case PlayerFieldStates.ReceiveBall:
+      case FieldPlayerStates.ReceiveBall:
         if (this.isBallWithinReceivingRange || !this.team.isInControl) {
-          this.setState(PlayerFieldStates.ChaseBall);
+          this.setState(FieldPlayerStates.ChaseBall);
         } else {
           if (this.persuitOn) {
             this.setTarget(this.scene.ball.position);
@@ -378,11 +378,11 @@ export default class PlayerField extends PlayerBase {
 
   public sendHomeIfWaiting(): this {
     if (
-      this.state === PlayerFieldStates.Wait ||
-      this.state === PlayerFieldStates.ReturnToHome
+      this.state === FieldPlayerStates.Wait ||
+      this.state === FieldPlayerStates.ReturnToHome
     ) {
       this.setTarget(this.home);
-      this.setState(PlayerFieldStates.ReturnToHome);
+      this.setState(FieldPlayerStates.ReturnToHome);
     }
 
     return this;

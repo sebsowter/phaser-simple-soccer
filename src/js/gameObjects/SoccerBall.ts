@@ -1,7 +1,7 @@
 import { BALL_DRAG, BALL_BOUNCE, BALL_RADIUS } from "../constants";
 import { PitchScene } from "../scenes";
 
-export default class Ball extends Phaser.Physics.Arcade.Image {
+export default class SoccerBall extends Phaser.Physics.Arcade.Image {
   public scene: PitchScene;
   public body: Phaser.Physics.Arcade.Body;
 

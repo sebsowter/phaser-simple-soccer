@@ -3,7 +3,7 @@ import {
   PlayerRegions,
   PlayerRoles,
   PlayerEvent,
-  TeamProps,
+  SoccerTeamProps,
 } from "../types";
 import { MAX_PASS_POWER, SHOOT_ATTEMPTS } from "../constants";
 import { PitchScene } from "../scenes";
@@ -11,27 +11,26 @@ import {
   SupportSpots,
   Spot,
   PlayerBase,
-  PlayerField,
-  PlayerKeeper,
   Goal,
-  Ball,
+  SoccerBall,
+  PlayerFactory,
 } from "./";
 
-export enum TeamStates {
+export enum SoccerTeamStates {
   PrepareForKickOff,
   Defending,
   Attacking,
 }
 
-export default class Team extends Phaser.GameObjects.Group {
+export default class SoccerTeam extends Phaser.GameObjects.Group {
   public scene: PitchScene;
-  public state: TeamStates;
+  public state: SoccerTeamStates;
 
   private _spots: SupportSpots;
   private _isLeft: boolean;
   private _regions: PlayerRegions;
   private _players: PlayerBase[];
-  private _opponents: Team;
+  private _opponents: SoccerTeam;
   private _goalHome: Goal;
   private _goalOpponents: Goal;
   private _supportingPlayer: PlayerBase = null;
@@ -41,7 +40,7 @@ export default class Team extends Phaser.GameObjects.Group {
 
   constructor(
     scene: Phaser.Scene,
-    team: TeamProps,
+    team: SoccerTeamProps,
     isLeft: boolean,
     goalOpponents: Goal,
     goalHome: Goal
@@ -56,21 +55,20 @@ export default class Team extends Phaser.GameObjects.Group {
     this._regions = team.regions;
     this._spots = new SupportSpots(this.scene, this, isLeft);
     this._players = team.players.map((props: PlayerProps, index: number) => {
-      const PlayerClass =
-        props.role === PlayerRoles.Goalkeeper ? PlayerKeeper : PlayerField;
       const position = this._regions.defending[index];
+      const offset = 64;
 
-      return new PlayerClass(
+      return new PlayerFactory(
         this.scene,
-        position.x + (-64 + Math.random() * 128),
-        position.y + (-64 + Math.random() * 128),
+        position.x + Phaser.Math.Between(-offset, offset),
+        position.y + Phaser.Math.Between(-offset, offset),
         team.frame,
         props,
         index,
         team.name,
         position,
         this
-      );
+      ) as PlayerBase;
     });
 
     this._players.forEach((player: PlayerBase) => {
@@ -78,16 +76,16 @@ export default class Team extends Phaser.GameObjects.Group {
     });
 
     this.setName(team.name);
-    this.setState(TeamStates.PrepareForKickOff);
+    this.setState(SoccerTeamStates.PrepareForKickOff);
   }
 
-  public setState(state: TeamStates): this {
+  public setState(state: SoccerTeamStates): this {
     switch (this.state) {
-      case TeamStates.PrepareForKickOff:
+      case SoccerTeamStates.PrepareForKickOff:
         this.scene.setGameOn(true);
         break;
 
-      case TeamStates.Attacking:
+      case SoccerTeamStates.Attacking:
         this.setSupportingPlayer(null);
         break;
     }
@@ -95,7 +93,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this.state = state;
 
     switch (state) {
-      case TeamStates.PrepareForKickOff:
+      case SoccerTeamStates.PrepareForKickOff:
         this.setControllingPlayer(null);
         this.setClosestPlayer(null);
         this.setSupportingPlayer(null);
@@ -103,12 +101,12 @@ export default class Team extends Phaser.GameObjects.Group {
         this.sendFieldPlayersToHome();
         break;
 
-      case TeamStates.Defending:
+      case SoccerTeamStates.Defending:
         this.updateHomeTargets(this._regions.defending);
         this.updateTargetsOfWaitingPlayers();
         break;
 
-      case TeamStates.Attacking:
+      case SoccerTeamStates.Attacking:
         this.updateHomeTargets(this._regions.attacking);
         this.updateTargetsOfWaitingPlayers();
         break;
@@ -121,28 +119,28 @@ export default class Team extends Phaser.GameObjects.Group {
     this.setClosestPlayer(this.findClosestPlayer());
 
     switch (this.state) {
-      case TeamStates.PrepareForKickOff:
+      case SoccerTeamStates.PrepareForKickOff:
         if (this.allPlayersAtHome && this.opponents.allPlayersAtHome) {
-          this.setState(TeamStates.Defending);
+          this.setState(SoccerTeamStates.Defending);
         }
         break;
 
-      case TeamStates.Defending:
+      case SoccerTeamStates.Defending:
         if (this.isInControl) {
-          this.setState(TeamStates.Attacking);
+          this.setState(SoccerTeamStates.Attacking);
         }
         break;
 
-      case TeamStates.Attacking:
+      case SoccerTeamStates.Attacking:
         if (!this.isInControl) {
-          this.setState(TeamStates.Defending);
+          this.setState(SoccerTeamStates.Defending);
         }
         break;
     }
   }
 
   public kickOff() {
-    this.setState(TeamStates.PrepareForKickOff);
+    this.setState(SoccerTeamStates.PrepareForKickOff);
   }
 
   public sendFieldPlayersToHome() {
@@ -290,7 +288,7 @@ export default class Team extends Phaser.GameObjects.Group {
 
   public requestPass(requester: PlayerBase) {
     if (
-      Math.random() < 0.1 &&
+      Math.random() < 0.05 &&
       this.isPassSafeFromAllOpponents(
         this.controllingPlayer.position,
         requester.position,
@@ -428,7 +426,7 @@ export default class Team extends Phaser.GameObjects.Group {
     this._supportingPlayer = player;
   }
 
-  public setOpponents(team: Team) {
+  public setOpponents(team: SoccerTeam) {
     this._opponents = team;
   }
 
@@ -456,7 +454,7 @@ export default class Team extends Phaser.GameObjects.Group {
     return this.players.every((player: PlayerBase) => player.isAtHome);
   }
 
-  public get ball(): Ball {
+  public get ball(): SoccerBall {
     return this.scene.ball;
   }
 
@@ -464,7 +462,7 @@ export default class Team extends Phaser.GameObjects.Group {
     return this._players;
   }
 
-  public get opponents(): Team {
+  public get opponents(): SoccerTeam {
     return this._opponents;
   }
 

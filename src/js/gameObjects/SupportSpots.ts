@@ -8,19 +8,19 @@ import {
   SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE,
 } from "../constants";
 import { PitchScene } from "../scenes";
-import { Spot, Team } from "./";
+import { Spot, SoccerTeam } from "./";
 
 export default class SupportSpots {
-  private _team: Team;
+  private _team: SoccerTeam;
   private _spots: Spot[];
   private _supportSpot: Spot = null;
   private _circles: Phaser.GameObjects.Arc[];
 
-  constructor(scene: PitchScene, team: Team, isLeft: boolean) {
+  constructor(scene: PitchScene, team: SoccerTeam, isLeft: boolean) {
     const CENTER_X = isLeft ? 64 + 96 * 9 : 64 + 96 * 3;
     const CENTER_Y = 352;
-    const GAP_X = 80;
-    const GAP_Y = 80;
+    const GAP_X = 72;
+    const GAP_Y = 72;
     const COLS = 5;
     const ROWS = 6;
     const LENGTH = (COLS - 1) * GAP_X;

@@ -1,4 +1,4 @@
-import { TeamProps } from "../types";
+import { SoccerTeamProps } from "../types";
 import { players } from "./players";
 
 const getRegionPos = (region: number): Phaser.Math.Vector2 => {
@@ -12,7 +12,7 @@ const getRegionPos = (region: number): Phaser.Math.Vector2 => {
   );
 };
 
-export const teams: TeamProps[] = [
+export const teams: SoccerTeamProps[] = [
   {
     id: 1,
     frame: 1,

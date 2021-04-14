@@ -27,7 +27,7 @@ export interface PlayerProps {
   shootAccuracy?: number;
 }
 
-export interface TeamProps {
+export interface SoccerTeamProps {
   id: number;
   frame: number;
   name: string;
