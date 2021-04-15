@@ -9,7 +9,7 @@ import { MAX_PASS_POWER, SHOOT_ATTEMPTS } from "../constants";
 import { PitchScene } from "../scenes";
 import {
   SupportSpots,
-  Spot,
+  SupportSpot,
   PlayerBase,
   Goal,
   SoccerBall,
@@ -26,10 +26,10 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
   public scene: PitchScene;
   public state: SoccerTeamStates;
 
-  private _spots: SupportSpots;
   private _isLeft: boolean;
   private _regions: PlayerRegions;
   private _players: PlayerBase[];
+  private _spots: SupportSpots;
   private _opponents: SoccerTeam;
   private _goalHome: Goal;
   private _goalOpponents: Goal;
@@ -49,9 +49,9 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
 
     this.scene.add.existing(this);
 
-    this._goalOpponents = goalOpponents;
-    this._goalHome = goalHome;
     this._isLeft = isLeft;
+    this._goalHome = goalHome;
+    this._goalOpponents = goalOpponents;
     this._regions = team.regions;
     this._spots = new SupportSpots(this.scene, this, isLeft);
     this._players = team.players.map((props: PlayerProps, index: number) => {
@@ -430,7 +430,7 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
     this._opponents = team;
   }
 
-  public getSupportSpot(): Spot {
+  public getSupportSpot(): SupportSpot {
     return this._spots.supportSpot;
   }
 

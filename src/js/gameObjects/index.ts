@@ -1,7 +1,7 @@
 export { default as Goal } from "./Goal";
 export { default as SoccerBall } from "./SoccerBall";
 export { default as Info } from "./Info";
-export { default as Spot } from "./Spot";
+export { default as SupportSpot } from "./SupportSpot";
 export { default as Score } from "./Score";
 export { default as SoccerPitch } from "./SoccerPitch";
 export { default as SupportSpots } from "./SupportSpots";

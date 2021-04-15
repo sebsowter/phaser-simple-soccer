@@ -8,19 +8,19 @@ import {
   SUPPORT_SPOT_OPTIMAL_PASS_DISTANCE,
 } from "../constants";
 import { PitchScene } from "../scenes";
-import { Spot, SoccerTeam } from "./";
+import { SupportSpot, SoccerTeam } from "./";
 
 export default class SupportSpots {
   private _team: SoccerTeam;
-  private _spots: Spot[];
-  private _supportSpot: Spot = null;
+  private _spots: SupportSpot[];
+  private _supportSpot: SupportSpot = null;
   private _circles: Phaser.GameObjects.Arc[];
 
   constructor(scene: PitchScene, team: SoccerTeam, isLeft: boolean) {
     const CENTER_X = isLeft ? 64 + 96 * 9 : 64 + 96 * 3;
     const CENTER_Y = 352;
-    const GAP_X = 72;
-    const GAP_Y = 72;
+    const GAP_X = 80;
+    const GAP_Y = 80;
     const COLS = 5;
     const ROWS = 6;
     const LENGTH = (COLS - 1) * GAP_X;
@@ -37,7 +37,7 @@ export default class SupportSpots {
           CENTER_Y - HEIGHT / 2 + y * GAP_Y
         );
 
-        this._spots.push(new Spot(position.x, position.y));
+        this._spots.push(new SupportSpot(position.x, position.y));
         this._circles.push(
           scene.add
             .circle(position.x, position.y, 8, 0x00ff00)
@@ -64,13 +64,13 @@ export default class SupportSpots {
     });
   }
 
-  public calculateSupportSpot(): Spot {
+  public calculateSupportSpot(): SupportSpot {
     let bestScore: number = 0;
     let bestIndex: number = 0;
 
     this._supportSpot = null;
 
-    this._spots.forEach((spot: Spot, index: number) => {
+    this._spots.forEach((spot: SupportSpot, index: number) => {
       spot.score = 1;
 
       if (
@@ -118,7 +118,7 @@ export default class SupportSpots {
     return this._supportSpot;
   }
 
-  public get supportSpot(): Spot {
+  public get supportSpot(): SupportSpot {
     return this._supportSpot || this.calculateSupportSpot();
   }
 }
