@@ -27,56 +27,49 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
       112
     );
 
-    const back = new Phaser.GameObjects.Rectangle(
-      this.scene,
-      x - facing * 60,
-      y,
-      8,
-      128
-    );
+    const rectangleCoords = [
+      [x - facing * 60, y, 8, 128],
+      [x - facing * 34, y - 60, 60, 8],
+      [x - facing * 34, y + 60, 60, 8],
+    ];
 
-    const left = new Phaser.GameObjects.Rectangle(
-      this.scene,
-      x - facing * 34,
-      y - 60,
-      60,
-      8
-    );
+    const rectangles = rectangleCoords.map((coord: number[]) => {
+      return new Phaser.GameObjects.Rectangle(
+        this.scene,
+        coord[0],
+        coord[1],
+        coord[2],
+        coord[3]
+      );
+    });
 
-    const right = new Phaser.GameObjects.Rectangle(
-      this.scene,
-      x - facing * 34,
-      y + 60,
-      60,
-      8
-    );
+    rectangles.forEach((rectangle: Phaser.GameObjects.Rectangle) => {
+      this.add(rectangle);
+    });
 
-    const rightPost = new Phaser.GameObjects.Ellipse(
-      this.scene,
-      x - facing * 4,
-      y + 60,
-      8,
-      8
-    );
+    const circleCoords = [
+      [x - facing * 4, y + 60, 8, 8],
+      [x - facing * 4, y - 60, 8, 8],
+    ];
 
-    const leftPost = new Phaser.GameObjects.Ellipse(
-      this.scene,
-      x - facing * 4,
-      y - 60,
-      8,
-      8
-    );
+    const circles = circleCoords.map((coord: number[]) => {
+      return new Phaser.GameObjects.Ellipse(
+        this.scene,
+        coord[0],
+        coord[1],
+        coord[2],
+        coord[3]
+      );
+    });
+
+    circles.forEach((circle: Phaser.GameObjects.Ellipse) => {
+      this.add(circle);
+    });
 
     this.scene.physics.world.enable(
-      [back, left, right, leftPost, rightPost],
+      [...rectangles, ...circles],
       Phaser.Physics.Arcade.STATIC_BODY
     );
-
-    this.add(back);
-    this.add(left);
-    this.add(leftPost);
-    this.add(right);
-    this.add(rightPost);
   }
 
   public incrementScore() {
