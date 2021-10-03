@@ -79,7 +79,7 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
     this.setState(SoccerTeamStates.PrepareForKickOff);
   }
 
-  public setState(state: SoccerTeamStates): this {
+  public setState(state: SoccerTeamStates) {
     switch (this.state) {
       case SoccerTeamStates.PrepareForKickOff:
         this.scene.setGameOn(true);
@@ -391,7 +391,7 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
     return true;
   }
 
-  public findClosestPlayer(): PlayerBase {
+  public findClosestPlayer() {
     let closestPlayer = this.players[0];
 
     this.players.forEach((player: PlayerBase) => {
@@ -446,55 +446,55 @@ export default class SoccerTeam extends Phaser.GameObjects.Group {
     this._supportingPlayer = player;
   }
 
-  public get isInControl(): boolean {
+  public get isInControl() {
     return !!this.controllingPlayer;
   }
 
-  public get allPlayersAtHome(): boolean {
+  public get allPlayersAtHome() {
     return this.players.every((player: PlayerBase) => player.isAtHome);
   }
 
-  public get ball(): SoccerBall {
+  public get ball() {
     return this.scene.ball;
   }
 
-  public get players(): PlayerBase[] {
+  public get players() {
     return this._players;
   }
 
-  public get opponents(): SoccerTeam {
+  public get opponents() {
     return this._opponents;
   }
 
-  public get isLeft(): boolean {
+  public get isLeft() {
     return this._isLeft;
   }
 
-  public get goalOpponents(): Goal {
+  public get goalOpponents() {
     return this._goalOpponents;
   }
 
-  public get goalHome(): Goal {
+  public get goalHome() {
     return this._goalHome;
   }
 
-  public get closestPlayer(): PlayerBase {
+  public get closestPlayer() {
     return this._closestPlayer;
   }
 
-  public get receivingPlayer(): PlayerBase {
+  public get receivingPlayer() {
     return this._receivingPlayer;
   }
 
-  public get supportingPlayer(): PlayerBase {
+  public get supportingPlayer() {
     return this._supportingPlayer;
   }
 
-  public get controllingPlayer(): PlayerBase {
+  public get controllingPlayer() {
     return this._controllingPlayer;
   }
 
-  public get closestPlayerOnPitchToBall(): PlayerBase {
+  public get closestPlayerOnPitchToBall() {
     return this.closestPlayer.position.distance(this.ball.position) <
       this.opponents.closestPlayer.position.distance(this.ball.position)
       ? this.closestPlayer

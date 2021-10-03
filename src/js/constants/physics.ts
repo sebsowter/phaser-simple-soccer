@@ -1,6 +1,7 @@
 export const FPS = 60;
 export const DELTA = 1 / FPS;
-export const MAX_SHOT_POWER = 560;
+export const MAX_SHOT_POWER = 520;
+export const MAX_GOAL_KICK_POWER = 560;
 export const MAX_PASS_POWER = 480;
 export const POT_SHOT_CHANCE = 0.005;
 export const PASS_THREAT_RADIUS = 64;

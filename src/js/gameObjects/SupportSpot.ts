@@ -5,7 +5,7 @@ export default class SupportSpot extends Phaser.Math.Vector2 {
     this._score = value;
   }
 
-  public get score(): number {
+  public get score() {
     return this._score;
   }
 }

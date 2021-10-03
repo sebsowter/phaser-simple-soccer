@@ -55,27 +55,27 @@ export default class Pitch extends Phaser.GameObjects.Group {
     );
   }
 
-  public get bounds(): Phaser.Geom.Rectangle {
+  public get bounds() {
     return this._bounds;
   }
 
-  public get width(): any {
+  public get width() {
     return this.bounds.width;
   }
 
-  public get height(): any {
+  public get height() {
     return this.bounds.height;
   }
 
-  public get x(): number {
+  public get x() {
     return this.bounds.x;
   }
 
-  public get y(): number {
+  public get y() {
     return this.bounds.y;
   }
 
-  public get midpoint(): Phaser.Math.Vector2 {
+  public get midpoint() {
     return new Phaser.Math.Vector2(
       this.x + this.width / 2,
       this.y + this.height / 2

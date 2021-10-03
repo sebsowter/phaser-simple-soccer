@@ -64,7 +64,7 @@ export default class SupportSpots {
     });
   }
 
-  public calculateSupportSpot(): SupportSpot {
+  public calculateSupportSpot() {
     let bestScore: number = 0;
     let bestIndex: number = 0;
 
@@ -118,7 +118,7 @@ export default class SupportSpots {
     return this._supportSpot;
   }
 
-  public get supportSpot(): SupportSpot {
+  public get supportSpot() {
     return this._supportSpot || this.calculateSupportSpot();
   }
 }

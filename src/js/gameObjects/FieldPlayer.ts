@@ -102,7 +102,7 @@ export default class FieldPlayer extends PlayerBase {
     this.setState(FieldPlayerStates.ReturnToHome);
   }
 
-  public setState(value: FieldPlayerStates): this {
+  public setState(value: FieldPlayerStates) {
     switch (this.state) {
       case FieldPlayerStates.ChaseBall:
         this.setSeekOn(false);
@@ -376,7 +376,7 @@ export default class FieldPlayer extends PlayerBase {
     super.preUpdate(time, delta);
   }
 
-  public sendHomeIfWaiting(): this {
+  public sendHomeIfWaiting() {
     if (
       this.state === FieldPlayerStates.Wait ||
       this.state === FieldPlayerStates.ReturnToHome

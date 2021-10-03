@@ -47,13 +47,13 @@ export default class SoccerBall extends Phaser.Physics.Arcade.Image {
   public addNoiseToKick(
     position: Phaser.Math.Vector2,
     target: Phaser.Math.Vector2
-  ): Phaser.Math.Vector2 {
+  ) {
     const displacement = Math.PI * 0.01 * (-1 + Math.random() * 2);
 
     return target.clone().subtract(position).rotate(displacement).add(position);
   }
 
-  public kick(vector: Phaser.Math.Vector2, power: number): this {
+  public kick(vector: Phaser.Math.Vector2, power: number) {
     const direction = vector.clone().normalize();
 
     this.setVelocity(direction.x * power, direction.y * power);
@@ -61,7 +61,7 @@ export default class SoccerBall extends Phaser.Physics.Arcade.Image {
     return this;
   }
 
-  public place(x: number, y: number): this {
+  public place(x: number, y: number) {
     this.setVelocity(0, 0);
     this.setAngularVelocity(0);
     this.setPosition(x, y);
@@ -69,14 +69,14 @@ export default class SoccerBall extends Phaser.Physics.Arcade.Image {
     return this;
   }
 
-  public trap(): this {
+  public trap() {
     this.setVelocity(0, 0);
     this.setAngularVelocity(0);
 
     return this;
   }
 
-  public timeToCoverDistance(distance: number, velocity: number): number {
+  public timeToCoverDistance(distance: number, velocity: number) {
     const term = velocity * velocity + 2 * distance * BALL_DRAG;
 
     if (term <= 0) {
@@ -86,7 +86,7 @@ export default class SoccerBall extends Phaser.Physics.Arcade.Image {
     return (Math.sqrt(term) - velocity) / BALL_DRAG;
   }
 
-  public futurePosition(time: number): Phaser.Math.Vector2 {
+  public futurePosition(time: number) {
     const direction = this.body.velocity.clone().normalize();
     const dragForce = 0.5 * BALL_DRAG * time * time;
     const drag = new Phaser.Math.Vector2(
@@ -101,11 +101,11 @@ export default class SoccerBall extends Phaser.Physics.Arcade.Image {
     return this.position.add(velocity).add(drag);
   }
 
-  public get position(): Phaser.Math.Vector2 {
+  public get position() {
     return new Phaser.Math.Vector2(this.x, this.y);
   }
 
-  public get bounds(): Phaser.Geom.Circle {
+  public get bounds() {
     return new Phaser.Geom.Circle(this.x, this.y, BALL_RADIUS);
   }
 }

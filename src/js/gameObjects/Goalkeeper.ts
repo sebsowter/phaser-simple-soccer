@@ -1,5 +1,5 @@
 import { PlayerProps, PlayerEvent } from "../types";
-import { MAX_PASS_POWER, MIN_PASS_DISTANCE } from "../constants";
+import { MAX_GOAL_KICK_POWER, MIN_PASS_DISTANCE } from "../constants";
 import { SoccerTeam, PlayerBase } from ".";
 
 export enum GoalkeeperStates {
@@ -46,7 +46,7 @@ export default class Goalkeeper extends PlayerBase {
     this.setState(GoalkeeperStates.ReturnToHome);
   }
 
-  public setState(state: GoalkeeperStates): this {
+  public setState(state: GoalkeeperStates) {
     switch (this.state) {
       case GoalkeeperStates.TendGoal:
         this.setInterposeOn(false);
@@ -128,14 +128,14 @@ export default class Goalkeeper extends PlayerBase {
       case GoalkeeperStates.PutBallBackInPlay:
         const [canPass, passReceiver, passTarget] = this.team.findPass(
           this,
-          MAX_PASS_POWER,
+          MAX_GOAL_KICK_POWER,
           MIN_PASS_DISTANCE
         );
 
         if (canPass) {
           this.scene.ball.kick(
             passTarget.clone().subtract(this.scene.ball.position),
-            MAX_PASS_POWER
+            MAX_GOAL_KICK_POWER
           );
           this.scene.setGoalkeeperHasBall(false);
           this.scene.events.emit(
@@ -151,7 +151,7 @@ export default class Goalkeeper extends PlayerBase {
     }
   }
 
-  public get isAtHome(): boolean {
+  public get isAtHome() {
     return this.isCloseToHome(128);
   }
 }

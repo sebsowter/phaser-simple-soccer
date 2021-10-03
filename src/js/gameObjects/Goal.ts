@@ -76,30 +76,30 @@ export default class GoalGroup extends Phaser.GameObjects.Group {
     this._scored++;
   }
 
-  public get scored(): number {
+  public get scored() {
     return this._scored;
   }
 
-  public get facing(): Phaser.Math.Vector2 {
+  public get facing() {
     return this._facing;
   }
 
-  public get bounds(): Phaser.Geom.Rectangle {
+  public get bounds() {
     return this._bounds;
   }
 
-  public get height(): number {
+  public get height() {
     return this.bounds.height;
   }
 
-  public get position(): Phaser.Math.Vector2 {
+  public get position() {
     return new Phaser.Math.Vector2(
       this._image.x + this._facing.x * 32,
       this._image.y
     );
   }
 
-  public get isBallInGoal(): boolean {
+  public get isBallInGoal() {
     return Phaser.Geom.Intersects.CircleToRectangle(
       this.scene.ball.bounds,
       this.bounds
